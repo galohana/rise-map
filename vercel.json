@@ -1,0 +1,6 @@
+{
+  "alias": ["rise-map.vercel.app"],
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
