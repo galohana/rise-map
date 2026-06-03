@@ -140,8 +140,27 @@ export default function MapView({ studios, selectedId, onMarkerClick, onMapReady
 
   const handleMapLoad = useCallback(() => {
     if (!mapRef.current) return
-    // MapTiler Streets-v2 with language=he handles Hebrew labels natively —
-    // no manual style patching required.
+    const map = mapRef.current.getMap?.() || mapRef.current
+
+    // MapTiler's language=he URL hint + runtime patch:
+    // Walk every label layer and replace name:en → name:he so that
+    // roads, rivers, and cities show Hebrew where available.
+    // "Place labels" already uses {name} which is Hebrew for Israel.
+    try {
+      const style = map.getStyle()
+      if (style?.layers) {
+        style.layers.forEach(layer => {
+          const tf = layer.layout?.['text-field']
+          if (!tf) return
+          const str = JSON.stringify(tf)
+          if (str.includes('name:en')) {
+            const fixed = JSON.parse(str.replace(/name:en/g, 'name:he'))
+            map.setLayoutProperty(layer.id, 'text-field', fixed)
+          }
+        })
+      }
+    } catch (_) { /* style not yet ready */ }
+
     if (onMapReady) onMapReady(mapRef.current)
   }, [onMapReady])
 
