@@ -1,3 +1,4 @@
 {
-  "alias": ["rise-map.vercel.app"]
+  "alias": ["rise-map.vercel.app"],
+  "framework": "nextjs"
 }
