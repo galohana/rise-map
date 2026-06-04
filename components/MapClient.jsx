@@ -5,6 +5,10 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { categoryMeta, pinGlyph } from '@/lib/categories'
 
+// MapTiler Streets-v2 raster tiles (Hebrew labels in Israel, smooth — no grey gaps).
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY || 'wXHoK6SYPWqyuCIbsG5e'
+const TILE_URL = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`
+
 /* Build a clean teardrop divIcon with the studio glyph centered on a white disc. */
 function makeIcon(studio, selected) {
   const { color } = categoryMeta(studio.type)
@@ -107,9 +111,8 @@ export default function MapClient({ studios, selectedId, focus, onMarkerClick })
         style={{ width: '100%', height: '100%' }}
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          subdomains="abcd"
+          url={TILE_URL}
+          attribution='<a href="https://www.maptiler.com">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           maxZoom={20}
         />
 
@@ -134,7 +137,7 @@ export default function MapClient({ studios, selectedId, focus, onMarkerClick })
 
       <div className="absolute bottom-1 right-1 z-[800] pointer-events-none">
         <span className="text-[10px] font-heebo text-zinc-500 bg-white/80 rounded px-1.5 py-0.5">
-          © OpenStreetMap · CARTO
+          © MapTiler · OpenStreetMap
         </span>
       </div>
     </div>
