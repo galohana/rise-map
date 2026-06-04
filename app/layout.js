@@ -22,6 +22,9 @@ export const metadata = {
     'ספרייה מלאה של מכוני גבות, לק, מספרות וקוסמטיקה ברשת RISE. מצאי סטודיו מקצועי בעיר שלך על המפה.',
   keywords: ['מכון גבות', 'לק ג׳ל', 'מספרה', 'קוסמטיקה', 'ישראל', 'RISE', 'סטודיו יופי'],
   robots: { index: true, follow: true },
+  verification: {
+    google: 'Sw6Bere8iE1qVXbwfY24NBbbIZxwodH9JAWD7G8e1EE',
+  },
   openGraph: {
     type: 'website',
     title: 'רשת סטודיואים RISE — גבות, לק ומספרות בישראל',
