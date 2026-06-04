@@ -24,6 +24,7 @@ const WRITABLE = [
   'business_name', 'slug', 'city', 'region', 'address',
   'lat', 'lng', 'type', 'url', 'logo_url', 'phone',
   'rating', 'active', 'emoji', 'owner_name', 'years_experience',
+  'owner_age', 'specialty', 'custom_description',
 ]
 
 function safeEqual(a, b) {
@@ -55,7 +56,7 @@ function sanitize(body) {
     if (k === 'lat' || k === 'lng' || k === 'rating') {
       v = v === '' || v === null ? null : Number(v)
       if (v !== null && Number.isNaN(v)) v = null
-    } else if (k === 'years_experience') {
+    } else if (k === 'years_experience' || k === 'owner_age') {
       v = v === '' || v === null ? null : parseInt(v, 10)
       if (v !== null && Number.isNaN(v)) v = null
     } else if (k === 'active') {

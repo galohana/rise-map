@@ -5,6 +5,7 @@ import { CATEGORIES, categoryMeta } from '../../lib/categories'
 const EMPTY = {
   business_name: '', owner_name: '', type: 'גבות', city: '', address: '',
   lat: '', lng: '', phone: '', url: '', years_experience: '',
+  owner_age: '', specialty: '', custom_description: '',
   emoji: '', logo_url: '', active: true,
 }
 
@@ -127,6 +128,28 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
               <input type="number" className={FIELD} value={form.years_experience || ''}
                      onChange={e => set('years_experience', e.target.value)} placeholder="5" dir="ltr" />
             </div>
+          </div>
+
+          {/* owner age + specialty */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={LABEL}>גיל בעלת הסטודיו</label>
+              <input type="number" className={FIELD} value={form.owner_age || ''}
+                     onChange={e => set('owner_age', e.target.value)} placeholder="32" dir="ltr" />
+            </div>
+            <div>
+              <label className={LABEL}>התמחות</label>
+              <input className={FIELD} value={form.specialty || ''}
+                     onChange={e => set('specialty', e.target.value)} placeholder="גבות שעווה, הסרת שיער" />
+            </div>
+          </div>
+
+          {/* custom description */}
+          <div>
+            <label className={LABEL}>תיאור חופשי</label>
+            <textarea rows={3} className={FIELD + ' resize-none'} value={form.custom_description || ''}
+                      onChange={e => set('custom_description', e.target.value)}
+                      placeholder="מלל שיופיע בכרטיס הסטודיו..." />
           </div>
 
           {/* website */}

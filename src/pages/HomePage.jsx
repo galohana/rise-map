@@ -4,6 +4,7 @@ import Header from '../components/Header'
 import FilterBar from '../components/FilterBar'
 import StudioList from '../components/StudioList'
 import MapView from '../components/MapView'
+import StudioPanel from '../components/StudioPanel'
 import Footer from '../components/Footer'
 import { useStudios } from '../hooks/useStudios'
 
@@ -11,6 +12,7 @@ export default function HomePage() {
   const { studios, loading, error } = useStudios()
   const [filters, setFilters] = useState({ type: 'הכל', region: 'הכל', search: '' })
   const [selectedId, setSelectedId] = useState(null)
+  const [panelStudio, setPanelStudio] = useState(null)
   const [mobileView, setMobileView] = useState('list')
   const mapRef = useRef(null)
 
@@ -24,25 +26,19 @@ export default function HomePage() {
     return true
   })
 
-  const handleCardClick = useCallback(studio => {
+  // Open the detail panel for a studio (from pin or card) + fly the map to it.
+  const openStudio = useCallback(studio => {
     setSelectedId(studio.id)
+    setPanelStudio(studio)
     const lat = Number(studio.lat)
     const lng = Number(studio.lng)
     if (mapRef.current && !isNaN(lat) && !isNaN(lng)) {
-      // MapLibre: center is [lng, lat], duration in ms
-      mapRef.current.flyTo({ center: [lng, lat], zoom: 15, duration: 1200, essential: true })
+      mapRef.current.flyTo({ center: [lng, lat], zoom: 14, duration: 1100, essential: true })
     }
-    setMobileView('map')
   }, [])
 
-  const handleMarkerClick = useCallback(studio => {
-    setSelectedId(studio.id)
-    setMobileView('list')
-    setTimeout(() => {
-      document.getElementById(`card-${studio.id}`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    }, 130)
-  }, [])
+  const handleCardClick = openStudio
+  const handleMarkerClick = openStudio
 
   const handleMapReady = useCallback(map => {
     mapRef.current = map
@@ -127,6 +123,17 @@ export default function HomePage() {
         </div>
 
       </main>
+
+      {/* Studio detail panel — one at a time, closes on X / outside / Escape */}
+      <AnimatePresence>
+        {panelStudio && (
+          <StudioPanel
+            key={panelStudio.id}
+            studio={panelStudio}
+            onClose={() => setPanelStudio(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

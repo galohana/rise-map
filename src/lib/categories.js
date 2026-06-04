@@ -13,28 +13,28 @@ export const CATEGORIES = ['גבות', 'לק', 'מספרה', 'קוסמטיקה']
 
 export const CATEGORY_META = {
   'גבות': {
-    color: '#1C1916',   // black — pin + accents
+    color: '#1a1a1a',   // black — pin + accents
     soft:  '#ECEAE8',   // soft bg for badges/avatars
     text:  '#1C1916',   // readable text on soft bg
     emoji: '👁️',        // default icon when studio has no emoji
     label: 'גבות',
   },
   'לק': {
-    color: '#E84C78',   // pink
+    color: '#e8729a',   // pink
     soft:  '#FCE7EF',
     text:  '#C0336A',
     emoji: '💅',
     label: 'לק',
   },
   'מספרה': {
-    color: '#C19A4D',   // gold
+    color: '#c9a84c',   // gold
     soft:  '#F6EFDD',
     text:  '#917226',
     emoji: '✂️',
     label: 'מספרה',
   },
   'קוסמטיקה': {
-    color: '#9B6FB0',   // plum
+    color: '#9b59b6',   // plum
     soft:  '#F1E9F5',
     text:  '#7B4F92',
     emoji: '💄',

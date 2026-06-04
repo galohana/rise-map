@@ -1,8 +1,8 @@
 import { useRef, useCallback, useState, useEffect } from 'react'
-import { Map, Marker, Popup } from 'react-map-gl/maplibre'
+import { Map, Marker } from 'react-map-gl/maplibre'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { categoryMeta, pinGlyph } from '../lib/categories'
 
 /*
@@ -95,53 +95,8 @@ function StudioPin({ studio, isSelected }) {
   )
 }
 
-/* ── Popup content ── */
-function PopupContent({ studio }) {
-  const { color } = categoryMeta(studio.type)
-  const glyph = pinGlyph(studio)
-  return (
-    <div dir="rtl" style={{ fontFamily: "'Heebo', sans-serif", minWidth: 195 }}>
-      <div style={{ padding: '14px 16px 13px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <span style={{
-            width: 22, height: 22, borderRadius: '50%',
-            background: color, flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, lineHeight: 1,
-          }}>{glyph}</span>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#18181B', margin: 0, lineHeight: 1.3 }}>
-            {studio.business_name}
-          </p>
-        </div>
-        <p style={{ fontSize: 11.5, color: '#71717A', margin: '0 17px 12px', lineHeight: 1.4 }}>
-          {studio.city}{studio.address ? ' — ' + studio.address : ''}
-        </p>
-        <a
-          href={studio.url} target="_blank" rel="noopener noreferrer"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 7,
-            fontSize: 12, color: 'white', fontWeight: 600,
-            textDecoration: 'none', background: color,
-            padding: '7px 16px', borderRadius: 100,
-            boxShadow: `0 2px 10px ${color}50`,
-          }}
-        >
-          כניסה לאתר
-          <span style={{
-            width: 18, height: 18, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.22)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 10, lineHeight: 1,
-          }}>↗</span>
-        </a>
-      </div>
-    </div>
-  )
-}
-
 /* ── Main component ── */
 export default function MapView({ studios, selectedId, onMarkerClick, onMapReady }) {
-  const [popupStudio, setPopupStudio] = useState(null)
   const [geoLoading, setGeoLoading] = useState(false)
   const mapRef = useRef(null)
 
@@ -213,29 +168,12 @@ export default function MapView({ studios, selectedId, onMarkerClick, onMapReady
               onClick={e => {
                 e.originalEvent?.stopPropagation()
                 onMarkerClick(studio)
-                setPopupStudio(studio)
               }}
             >
               <StudioPin studio={studio} isSelected={selectedId === studio.id} />
             </Marker>
           )
         })}
-
-        <AnimatePresence>
-          {popupStudio && (
-            <Popup
-              longitude={Number(popupStudio.lng)}
-              latitude={Number(popupStudio.lat)}
-              anchor="bottom"
-              closeButton={false}
-              onClose={() => setPopupStudio(null)}
-              offset={[0, -50]}
-              maxWidth="280px"
-            >
-              <PopupContent studio={popupStudio} />
-            </Popup>
-          )}
-        </AnimatePresence>
       </Map>
 
       {/* Attribution */}
