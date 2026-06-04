@@ -40,6 +40,20 @@ function makeIcon(studio, selected) {
   })
 }
 
+/* Recompute map size when the container resizes or becomes visible
+   (mobile list↔map toggle hides the container → Leaflet needs invalidateSize). */
+function AutoResize() {
+  const map = useMap()
+  useEffect(() => {
+    const el = map.getContainer()
+    const ro = new ResizeObserver(() => map.invalidateSize())
+    ro.observe(el)
+    const t = setTimeout(() => map.invalidateSize(), 250)
+    return () => { ro.disconnect(); clearTimeout(t) }
+  }, [map])
+  return null
+}
+
 /* Imperatively fly to the focused studio whenever it changes. */
 function FlyTo({ target }) {
   const map = useMap()
@@ -131,6 +145,7 @@ export default function MapClient({ studios, selectedId, focus, onMarkerClick })
           )
         })}
 
+        <AutoResize />
         <FlyTo target={focus} />
         <MapControls />
       </MapContainer>
