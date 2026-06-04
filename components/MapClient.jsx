@@ -54,16 +54,13 @@ function AutoResize() {
   return null
 }
 
-/* Imperatively fly to the focused studio whenever it changes. */
-function FlyTo({ target }) {
+/* Expose the Leaflet map instance to the parent (HomeClient drives the camera). */
+function MapBridge({ onReady }) {
   const map = useMap()
   useEffect(() => {
-    if (!target) return
-    const lat = Number(target.lat)
-    const lng = Number(target.lng)
-    if (Number.isNaN(lat) || Number.isNaN(lng)) return
-    map.flyTo([lat, lng], 14, { duration: 1.1 })
-  }, [target, map])
+    onReady?.(map)
+    return () => onReady?.(null)
+  }, [map, onReady])
   return null
 }
 
@@ -112,7 +109,7 @@ function MapControls() {
   )
 }
 
-export default function MapClient({ studios, selectedId, focus, onMarkerClick }) {
+export default function MapClient({ studios, selectedId, onMarkerClick, onReady }) {
   const markersRef = useRef({})
 
   return (
@@ -146,7 +143,7 @@ export default function MapClient({ studios, selectedId, focus, onMarkerClick })
         })}
 
         <AutoResize />
-        <FlyTo target={focus} />
+        <MapBridge onReady={onReady} />
         <MapControls />
       </MapContainer>
 

@@ -8,6 +8,7 @@ const EMPTY = {
   business_name: '', owner_name: '', type: 'גבות', city: '', address: '',
   lat: '', lng: '', phone: '', url: '', years_experience: '',
   owner_age: '', specialty: '', custom_description: '',
+  facebook_url: '', instagram_url: '', google_url: '', whatsapp: '',
   emoji: '', logo_url: '', active: true,
 }
 
@@ -166,6 +167,33 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
             <label className={LABEL}>אתר *</label>
             <input className={FIELD} value={form.url}
                    onChange={e => set('url', e.target.value)} placeholder="https://..." dir="ltr" />
+          </div>
+
+          {/* Social links */}
+          <div className="pt-1">
+            <p className="text-[13px] font-heebo font-semibold text-[#1C1916] mb-2.5">קישורים חברתיים</p>
+            <div className="space-y-3">
+              <div>
+                <label className={LABEL}>Facebook URL</label>
+                <input className={FIELD} value={form.facebook_url || ''}
+                       onChange={e => set('facebook_url', e.target.value)} placeholder="https://facebook.com/..." dir="ltr" />
+              </div>
+              <div>
+                <label className={LABEL}>Instagram URL</label>
+                <input className={FIELD} value={form.instagram_url || ''}
+                       onChange={e => set('instagram_url', e.target.value)} placeholder="https://instagram.com/..." dir="ltr" />
+              </div>
+              <div>
+                <label className={LABEL}>Google Business URL</label>
+                <input className={FIELD} value={form.google_url || ''}
+                       onChange={e => set('google_url', e.target.value)} placeholder="https://g.page/..." dir="ltr" />
+              </div>
+              <div>
+                <label className={LABEL}>WhatsApp (מספר בלבד)</label>
+                <input className={FIELD} value={form.whatsapp || ''}
+                       onChange={e => set('whatsapp', e.target.value)} placeholder="0501234567" dir="ltr" />
+              </div>
+            </div>
           </div>
 
           <div>

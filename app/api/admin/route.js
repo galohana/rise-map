@@ -21,6 +21,7 @@ const WRITABLE = [
   'lat', 'lng', 'type', 'url', 'logo_url', 'phone',
   'rating', 'active', 'emoji', 'owner_name', 'years_experience',
   'owner_age', 'specialty', 'custom_description',
+  'facebook_url', 'instagram_url', 'google_url', 'whatsapp',
 ]
 
 function safeEqual(a, b) {

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from './Header'
@@ -15,12 +15,15 @@ const MapClient = dynamic(() => import('./MapClient'), {
   loading: () => <div className="w-full h-full bg-[#eae6df] animate-pulse" />,
 })
 
+const isMobile = () =>
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+
 export default function HomeClient({ studios }) {
   const [filters, setFilters] = useState({ type: 'הכל', region: 'הכל', search: '' })
   const [selectedId, setSelectedId] = useState(null)
   const [panelStudio, setPanelStudio] = useState(null)
-  const [focus, setFocus] = useState(null)
   const [mobileView, setMobileView] = useState('list')
+  const mapRef = useRef(null)
 
   const filtered = studios.filter(s => {
     if (filters.type !== 'הכל' && s.type !== filters.type) return false
@@ -32,11 +35,48 @@ export default function HomeClient({ studios }) {
     return true
   })
 
+  const flyToStudio = useCallback(studio => {
+    const map = mapRef.current
+    if (!map) return
+    const lat = Number(studio.lat)
+    const lng = Number(studio.lng)
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return
+
+    if (isMobile()) {
+      // Zoom in, then shift the pin left so it sits in the strip left of the floating card.
+      map.flyTo([lat, lng], 15, { duration: 1 })
+      map.once('moveend', () => {
+        map.panBy([Math.round(window.innerWidth * 0.35), 0], { animate: true, duration: 0.4 })
+      })
+    } else {
+      map.flyTo([lat, lng], 14, { duration: 1.1 })
+    }
+  }, [])
+
   const openStudio = useCallback(studio => {
     setSelectedId(studio.id)
     setPanelStudio(studio)
-    setFocus({ ...studio, _t: Date.now() }) // new ref each time → re-fly even if same studio
+    if (isMobile()) {
+      setMobileView('map')           // reveal the map behind the floating card
+      setTimeout(() => flyToStudio(studio), 380) // let the map become visible + sized
+    } else {
+      flyToStudio(studio)
+    }
+  }, [flyToStudio])
+
+  const handleClose = useCallback(studio => {
+    setPanelStudio(null)
+    const map = mapRef.current
+    if (isMobile() && map && studio) {
+      const lat = Number(studio.lat)
+      const lng = Number(studio.lng)
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        map.flyTo([lat, lng], 13, { duration: 0.8 }) // re-center
+      }
+    }
   }, [])
+
+  const handleMapReady = useCallback(map => { mapRef.current = map }, [])
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#FAF8F5]" dir="rtl">
@@ -96,8 +136,8 @@ export default function HomeClient({ studios }) {
           <MapClient
             studios={filtered}
             selectedId={selectedId}
-            focus={focus}
             onMarkerClick={openStudio}
+            onReady={handleMapReady}
           />
         </div>
       </main>
@@ -108,7 +148,7 @@ export default function HomeClient({ studios }) {
           <StudioPanel
             key={panelStudio.id}
             studio={panelStudio}
-            onClose={() => setPanelStudio(null)}
+            onClose={() => handleClose(panelStudio)}
           />
         )}
       </AnimatePresence>
