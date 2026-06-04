@@ -1,15 +1,13 @@
 'use client'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import Header from './Header'
 import FilterBar from './FilterBar'
-import StudioList from './StudioList'
 import StudioPanel from './StudioPanel'
-import Footer from './Footer'
+import StudioDrawer from './StudioDrawer'
+import PromoModal from './PromoModal'
 
-/* Leaflet touches `window` → must be client-only. ssr:false is allowed here
-   because HomeClient is itself a Client Component. */
 const MapClient = dynamic(() => import('./MapClient'), {
   ssr: false,
   loading: () => <div className="w-full h-full bg-[#eae6df] animate-pulse" />,
@@ -19,18 +17,26 @@ const isMobile = () =>
   typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
 
 export default function HomeClient({ studios }) {
-  const [filters, setFilters] = useState({ type: 'הכל', region: 'הכל', search: '' })
+  const [filters, setFilters] = useState({ type: 'הכל', search: '' })
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [panelStudio, setPanelStudio] = useState(null)
-  const [mobileView, setMobileView] = useState('list')
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [promoOpen, setPromoOpen] = useState(false)
   const mapRef = useRef(null)
+
+  // Debounce the search box (300ms) → drives filtering of list + pins.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(filters.search.trim()), 300)
+    return () => clearTimeout(t)
+  }, [filters.search])
 
   const filtered = studios.filter(s => {
     if (filters.type !== 'הכל' && s.type !== filters.type) return false
-    if (filters.region !== 'הכל' && s.region !== filters.region) return false
-    if (filters.search) {
-      const q = filters.search.trim()
-      if (!s.business_name.includes(q) && !s.city.includes(q)) return false
+    if (debouncedSearch) {
+      const q = debouncedSearch
+      const hay = `${s.business_name || ''} ${s.city || ''} ${s.owner_name || ''}`
+      if (!hay.includes(q)) return false
     }
     return true
   })
@@ -43,7 +49,6 @@ export default function HomeClient({ studios }) {
     if (Number.isNaN(lat) || Number.isNaN(lng)) return
 
     if (isMobile()) {
-      // Zoom in, then shift the pin left so it sits in the strip left of the floating card.
       map.flyTo([lat, lng], 15, { duration: 1 })
       map.once('moveend', () => {
         map.panBy([Math.round(window.innerWidth * 0.35), 0], { animate: true, duration: 0.4 })
@@ -56,12 +61,8 @@ export default function HomeClient({ studios }) {
   const openStudio = useCallback(studio => {
     setSelectedId(studio.id)
     setPanelStudio(studio)
-    if (isMobile()) {
-      setMobileView('map')           // reveal the map behind the floating card
-      setTimeout(() => flyToStudio(studio), 380) // let the map become visible + sized
-    } else {
-      flyToStudio(studio)
-    }
+    setDrawerOpen(false)
+    setTimeout(() => flyToStudio(studio), isMobile() ? 120 : 0)
   }, [flyToStudio])
 
   const handleClose = useCallback(studio => {
@@ -70,9 +71,7 @@ export default function HomeClient({ studios }) {
     if (isMobile() && map && studio) {
       const lat = Number(studio.lat)
       const lng = Number(studio.lng)
-      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-        map.flyTo([lat, lng], 13, { duration: 0.8 }) // re-center
-      }
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) map.flyTo([lat, lng], 13, { duration: 0.8 })
     }
   }, [])
 
@@ -80,69 +79,53 @@ export default function HomeClient({ studios }) {
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#FAF8F5]" dir="rtl">
-      <Header />
+      <Header onOpenPromo={() => setPromoOpen(true)} />
       <FilterBar filters={filters} onChange={setFilters} />
 
-      {/* Mobile toggle */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="lg:hidden flex-shrink-0 flex justify-center py-2
-                   bg-white/80 backdrop-blur-sm border-b border-[#E8E2DC]/60"
-      >
-        <div className="flex bg-[#F0EBE4] rounded-full p-0.5 gap-0.5">
-          {['list', 'map'].map(v => (
-            <button
-              key={v}
-              onClick={() => setMobileView(v)}
-              className="relative px-7 py-1.5 rounded-full text-[12.5px] font-heebo font-medium"
-            >
-              {mobileView === v && (
-                <motion.div
-                  layoutId="mobile-tab"
-                  className="absolute inset-0 bg-[#1C1916] rounded-full"
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                />
-              )}
-              <span className={`relative z-10 transition-colors duration-200
-                                ${mobileView === v ? 'text-white' : 'text-[#6B6460]'}`}>
-                {v === 'list' ? 'רשימה' : 'מפה'}
-              </span>
-            </button>
-          ))}
-        </div>
-      </motion.div>
+      {/* Full-screen map */}
+      <main className="relative flex-1 min-h-0">
+        <MapClient
+          studios={filtered}
+          selectedId={selectedId}
+          onMarkerClick={openStudio}
+          onReady={handleMapReady}
+        />
+      </main>
 
-      {/* Main split */}
-      <main className="flex flex-1 overflow-hidden min-h-0">
-        {/* List */}
-        <div className={`flex-col ltr-scroll overflow-y-auto
-                         ${mobileView === 'map' ? 'hidden lg:flex' : 'flex'}
-                         w-full lg:w-[42%] flex-shrink-0`}>
-          <StudioList
+      {/* Floating list button (bottom-left) */}
+      <motion.button
+        onClick={() => setDrawerOpen(true)}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.92 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 24, delay: 0.4 }}
+        aria-label="רשימת הסטודיואות"
+        className="fixed bottom-5 left-5 z-[950] w-12 h-12 rounded-full flex items-center justify-center text-xl"
+        style={{
+          background: 'rgba(255,255,255,0.7)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.18)',
+        }}
+      >
+        📋
+      </motion.button>
+
+      {/* List drawer */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <StudioDrawer
             studios={filtered}
             selectedId={selectedId}
             onCardClick={openStudio}
+            onClose={() => setDrawerOpen(false)}
           />
-          <Footer />
-        </div>
+        )}
+      </AnimatePresence>
 
-        <div className="hidden lg:block w-px bg-[#E8E2DC] flex-shrink-0" />
-
-        {/* Map */}
-        <div className={`flex-1 min-w-0 h-full
-                         ${mobileView === 'list' ? 'hidden lg:block' : 'block'}`}>
-          <MapClient
-            studios={filtered}
-            selectedId={selectedId}
-            onMarkerClick={openStudio}
-            onReady={handleMapReady}
-          />
-        </div>
-      </main>
-
-      {/* Detail panel */}
+      {/* Studio detail panel */}
       <AnimatePresence>
         {panelStudio && (
           <StudioPanel
@@ -151,6 +134,11 @@ export default function HomeClient({ studios }) {
             onClose={() => handleClose(panelStudio)}
           />
         )}
+      </AnimatePresence>
+
+      {/* Promo modal */}
+      <AnimatePresence>
+        {promoOpen && <PromoModal onClose={() => setPromoOpen(false)} />}
       </AnimatePresence>
     </div>
   )

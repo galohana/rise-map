@@ -9,9 +9,32 @@ import { categoryMeta, pinGlyph } from '@/lib/categories'
 const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY || 'wXHoK6SYPWqyuCIbsG5e'
 const TILE_URL = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`
 
-/* Build a clean teardrop divIcon with the studio glyph centered on a white disc. */
+/* Marker icon:
+   - has logo_url → circular logo badge (clipped) with category ring + pointer
+   - otherwise   → teardrop with the studio emoji on a white disc */
 function makeIcon(studio, selected) {
   const { color } = categoryMeta(studio.type)
+
+  // ── Logo badge ──
+  if (studio.logo_url) {
+    const d = selected ? 48 : 40           // circle diameter
+    const tail = 8
+    const w = d
+    const h = d + tail
+    const html = `
+      <div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 ${selected ? 5 : 3}px ${selected ? 6 : 4}px rgba(20,18,16,0.32))">
+        <div style="position:absolute;left:50%;bottom:${tail - 2}px;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid ${color}"></div>
+        <div style="width:${d}px;height:${d}px;border-radius:50%;overflow:hidden;background:#fff;box-sizing:border-box;border:2.5px solid ${color}">
+          <img src="${studio.logo_url}" style="width:100%;height:100%;object-fit:cover;display:block" />
+        </div>
+      </div>`
+    return L.divIcon({
+      html, className: 'rise-pin',
+      iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -h],
+    })
+  }
+
+  // ── Emoji teardrop ──
   const glyph = pinGlyph(studio)
   const w = selected ? 50 : 38
   const h = selected ? 64 : 49
@@ -32,11 +55,8 @@ function makeIcon(studio, selected) {
     </div>`
 
   return L.divIcon({
-    html,
-    className: 'rise-pin',
-    iconSize: [w, h],
-    iconAnchor: [w / 2, h],
-    popupAnchor: [0, -h],
+    html, className: 'rise-pin',
+    iconSize: [w, h], iconAnchor: [w / 2, h], popupAnchor: [0, -h],
   })
 }
 
@@ -81,7 +101,8 @@ function MapControls() {
 
   return (
     <>
-      <div className="absolute bottom-24 left-4 z-[900] flex flex-col gap-1.5">
+      {/* Map tools live on the RIGHT — the floating list button owns the bottom-left. */}
+      <div className="absolute bottom-20 right-4 z-[900] flex flex-col gap-1.5">
         {[['+', () => map.zoomIn(), 'הגדל'], ['−', () => map.zoomOut(), 'הקטן']].map(([label, fn, aria]) => (
           <button key={label} onClick={fn} aria-label={aria}
             className="w-9 h-9 rounded-xl bg-white ring-1 ring-zinc-200 shadow-[0_2px_10px_rgba(0,0,0,0.12)]
@@ -91,7 +112,7 @@ function MapControls() {
           </button>
         ))}
       </div>
-      <div className="absolute bottom-6 left-4 z-[900]">
+      <div className="absolute bottom-6 right-4 z-[900]">
         <button onClick={locate} disabled={geo}
           className="flex items-center gap-2 bg-white rounded-full ring-1 ring-zinc-200 px-4 py-2
                      text-[13px] font-heebo font-medium text-zinc-700
@@ -147,8 +168,8 @@ export default function MapClient({ studios, selectedId, onMarkerClick, onReady 
         <MapControls />
       </MapContainer>
 
-      <div className="absolute bottom-1 right-1 z-[800] pointer-events-none">
-        <span className="text-[10px] font-heebo text-zinc-500 bg-white/80 rounded px-1.5 py-0.5">
+      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-[800] pointer-events-none">
+        <span className="text-[10px] font-heebo text-zinc-500 bg-white/70 rounded px-1.5 py-0.5">
           © MapTiler · OpenStreetMap
         </span>
       </div>
