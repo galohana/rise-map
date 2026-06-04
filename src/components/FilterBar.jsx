@@ -1,17 +1,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { CATEGORIES, categoryMeta } from '../lib/categories'
 
-const TYPES   = ['הכל', 'גבות', 'לק', 'מספרה', 'קוסמטיקה']
+const TYPES   = ['הכל', ...CATEGORIES]
 const REGIONS = ['הכל', 'צפון', 'מרכז', 'דרום']
-
-const TYPE_ACCENT = {
-  'גבות': '#C2714F', 'לק': '#E84C78', 'מספרה': '#2F80C0', 'קוסמטיקה': '#9B59D0',
-}
 
 export default function FilterBar({ filters, onChange }) {
   const [focused, setFocused] = useState(false)
 
-  const activeTypeColor = TYPE_ACCENT[filters.type] || '#18181B'
+  const activeTypeColor = filters.type === 'הכל' ? '#18181B' : categoryMeta(filters.type).color
 
   return (
     <motion.div

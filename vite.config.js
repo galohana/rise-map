@@ -3,6 +3,13 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  // Dev-only: proxy /api to the local serverless runtime (vercel dev on :5190).
+  // No effect on the production build.
+  server: {
+    proxy: {
+      '/api': 'http://localhost:5190',
+    },
+  },
   build: {
     rollupOptions: {
       output: {

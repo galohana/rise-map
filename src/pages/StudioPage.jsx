@@ -1,13 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-
-const TYPE_STYLE = {
-  'גבות':     { bg: '#F2ECE4', text: '#7B6550' },
-  'לק':       { bg: '#F5E8E8', text: '#B87070' },
-  'מספרה':    { bg: '#E6EEF2', text: '#527080' },
-  'קוסמטיקה': { bg: '#EDE6ED', text: '#7B607B' },
-}
+import { categoryMeta } from '../lib/categories'
 
 export default function StudioPage() {
   const { slug } = useParams()
@@ -49,7 +43,8 @@ export default function StudioPage() {
     )
   }
 
-  const style = TYPE_STYLE[studio.type] || TYPE_STYLE['גבות']
+  const m = categoryMeta(studio.type)
+  const style = { bg: m.soft, text: m.text }
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] font-heebo" dir="rtl">

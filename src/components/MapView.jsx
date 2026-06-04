@@ -3,6 +3,7 @@ import { Map, Marker, Popup } from 'react-map-gl/maplibre'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { motion, AnimatePresence } from 'framer-motion'
+import { categoryMeta, pinGlyph } from '../lib/categories'
 
 /*
   MapTiler Streets-v2 — vector tiles, Hebrew labels, Waze-like appearance.
@@ -14,13 +15,6 @@ const MAP_STYLE =
 const MAP_ATTRIBUTION =
   '&copy; <a href="https://www.maptiler.com/" target="_blank">MapTiler</a> ' +
   '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
-
-const TYPE_COLORS = {
-  'גבות':     '#C2714F',
-  'לק':       '#E84C78',
-  'מספרה':    '#2F80C0',
-  'קוסמטיקה': '#9B59D0',
-}
 
 /* ── RTL plugin — must run once before any Map renders ── */
 let rtlPluginLoaded = false
@@ -41,46 +35,60 @@ function ensureRTL() {
   }
 }
 
-/* ── Pin component ── */
-function StudioPin({ type, isSelected }) {
-  const color = TYPE_COLORS[type] || '#C2714F'
-  const w = isSelected ? 48 : 36
-  const h = isSelected ? 62 : 48
+/* ── Pin component ──────────────────────────────────────────────
+   Clean teardrop pin:
+   - colored body by category
+   - white inner disc so the glyph is always legible on any color
+   - studio emoji (or category default) centered in the disc
+   - soft single drop shadow, no texture
+*/
+function StudioPin({ studio, isSelected }) {
+  const { color } = categoryMeta(studio?.type)
+  const glyph = pinGlyph(studio)
+  const w = isSelected ? 50 : 38
+  const h = isSelected ? 64 : 49
+  const uid = `${studio?.id || 'p'}-${isSelected ? 1 : 0}`
 
   return (
     <motion.div
-      animate={{ scale: isSelected ? 1.2 : 1, y: isSelected ? -4 : 0 }}
+      animate={{ scale: isSelected ? 1.18 : 1, y: isSelected ? -3 : 0 }}
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-      whileHover={{ scale: isSelected ? 1.25 : 1.15 }}
+      whileHover={{ scale: isSelected ? 1.24 : 1.12 }}
       style={{ cursor: 'pointer', display: 'block' }}
     >
-      <svg width={w} height={h} viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg">
+      <svg width={w} height={h} viewBox="0 0 38 49" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <radialGradient id={`gr-${type}`} cx="38%" cy="28%" r="68%">
-            <stop offset="0%" stopColor="#fff" stopOpacity="0.30"/>
-            <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
-          </radialGradient>
-          <filter id={`fs-${type}-${isSelected ? 1 : 0}`} x="-80%" y="-50%" width="260%" height="240%">
-            <feDropShadow dx="0" dy={isSelected ? 6 : 3} stdDeviation={isSelected ? 7 : 4.5}
-              floodColor={color} floodOpacity={isSelected ? 0.52 : 0.34}/>
-            <feDropShadow dx="0" dy="1" stdDeviation="1.5"
-              floodColor="rgba(0,0,0,0.15)" floodOpacity="1"/>
+          <filter id={`sh-${uid}`} x="-80%" y="-50%" width="260%" height="240%">
+            <feDropShadow dx="0" dy={isSelected ? 5 : 3} stdDeviation={isSelected ? 5.5 : 3.5}
+              floodColor="rgba(20,18,16,0.28)" floodOpacity="1"/>
           </filter>
         </defs>
+
+        {/* Teardrop body */}
         <path
-          d="M18 1 C8.611 1 1 8.611 1 18 C1 30.5 18 47 18 47 C18 47 35 30.5 35 18 C35 8.611 27.389 1 18 1 Z"
+          d="M19 1 C9.06 1 1 9.06 1 19 C1 32 19 48 19 48 C19 48 37 32 37 19 C37 9.06 28.94 1 19 1 Z"
           fill={color}
-          filter={`url(#fs-${type}-${isSelected ? 1 : 0})`}
+          filter={`url(#sh-${uid})`}
         />
-        <path
-          d="M18 1 C8.611 1 1 8.611 1 18 C1 30.5 18 47 18 47 C18 47 35 30.5 35 18 C35 8.611 27.389 1 18 1 Z"
-          fill={`url(#gr-${type})`}
-        />
-        <circle cx="18" cy="18" r={isSelected ? 10.5 : 8.5} fill="rgba(255,255,255,0.95)"/>
-        <circle cx="18" cy="18" r={isSelected ? 5.5 : 4} fill={color}/>
+
+        {/* White inner disc */}
+        <circle cx="19" cy="18.5" r={isSelected ? 12 : 10} fill="#ffffff"/>
+
+        {/* Glyph (emoji) centered in disc */}
+        <text
+          x="19"
+          y={isSelected ? 19.5 : 19}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={isSelected ? 15 : 12.5}
+        >
+          {glyph}
+        </text>
+
+        {/* Selected pulse ring */}
         {isSelected && (
-          <circle cx="18" cy="18" r="8.5" fill="none"
-            stroke={color} strokeWidth="1.8" strokeDasharray="2.5 2" opacity="0.5"/>
+          <circle cx="19" cy="18.5" r="14.5" fill="none"
+            stroke={color} strokeWidth="2" opacity="0.45"/>
         )}
       </svg>
     </motion.div>
@@ -89,16 +97,18 @@ function StudioPin({ type, isSelected }) {
 
 /* ── Popup content ── */
 function PopupContent({ studio }) {
-  const color = TYPE_COLORS[studio.type] || '#C2714F'
+  const { color } = categoryMeta(studio.type)
+  const glyph = pinGlyph(studio)
   return (
     <div dir="rtl" style={{ fontFamily: "'Heebo', sans-serif", minWidth: 195 }}>
       <div style={{ padding: '14px 16px 13px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <div style={{
-            width: 9, height: 9, borderRadius: '50%',
+          <span style={{
+            width: 22, height: 22, borderRadius: '50%',
             background: color, flexShrink: 0,
-            boxShadow: `0 0 0 2.5px ${color}33`,
-          }}/>
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, lineHeight: 1,
+          }}>{glyph}</span>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#18181B', margin: 0, lineHeight: 1.3 }}>
             {studio.business_name}
           </p>
@@ -206,7 +216,7 @@ export default function MapView({ studios, selectedId, onMarkerClick, onMapReady
                 setPopupStudio(studio)
               }}
             >
-              <StudioPin type={studio.type} isSelected={selectedId === studio.id} />
+              <StudioPin studio={studio} isSelected={selectedId === studio.id} />
             </Marker>
           )
         })}

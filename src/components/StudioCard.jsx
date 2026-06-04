@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion'
+import { categoryMeta, pinGlyph } from '../lib/categories'
 
-const TYPE_STYLE = {
-  'גבות':     { bg: '#FEF3EB', text: '#C2714F', border: '#F5C4A8', ring: '#C2714F' },
-  'לק':       { bg: '#FEE8F1', text: '#E84C78', border: '#F5A8C4', ring: '#E84C78' },
-  'מספרה':    { bg: '#E8F4FE', text: '#2F80C0', border: '#A8D0F5', ring: '#2F80C0' },
-  'קוסמטיקה': { bg: '#F3E8FE', text: '#9B59D0', border: '#D0A8F5', ring: '#9B59D0' },
+/** Adapt shared category meta to the shape this card uses. */
+function cardStyle(type) {
+  const m = categoryMeta(type)
+  return { bg: m.soft, text: m.text, border: m.color + '55', ring: m.color }
 }
 
 export const cardVariants = {
@@ -17,7 +17,7 @@ export const cardVariants = {
 }
 
 export default function StudioCard({ studio, isSelected, onClick }) {
-  const s = TYPE_STYLE[studio.type] || TYPE_STYLE['גבות']
+  const s = cardStyle(studio.type)
 
   return (
     <motion.div
@@ -56,9 +56,7 @@ export default function StudioCard({ studio, isSelected, onClick }) {
               {studio.logo_url
                 ? <img src={studio.logo_url} alt={studio.business_name}
                         className="w-full h-full object-cover rounded-[0.875rem]" loading="lazy" />
-                : <span className="font-frank font-bold text-lg leading-none" style={{ color: s.text }}>
-                    {studio.business_name.charAt(0)}
-                  </span>
+                : <span className="text-xl leading-none">{pinGlyph(studio)}</span>
               }
             </div>
 
