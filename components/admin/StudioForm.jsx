@@ -2,14 +2,14 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { CATEGORIES, categoryMeta } from '@/lib/categories'
-import { uploadLogo } from '@/lib/adminApi'
+import { uploadLogo, uploadGallery } from '@/lib/adminApi'
 
 const EMPTY = {
   business_name: '', owner_name: '', type: 'גבות', city: '', address: '',
   lat: '', lng: '', phone: '', url: '', years_experience: '',
   owner_age: '', specialty: '', custom_description: '',
   facebook_url: '', instagram_url: '', google_url: '', whatsapp: '',
-  emoji: '', logo_url: '', active: true,
+  logo_url: '', gallery_urls: [], active: true,
 }
 
 const FIELD = 'w-full rounded-xl border border-[#E3DCD2] bg-white px-3.5 py-2.5 text-[14px] ' +
@@ -21,7 +21,9 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
   const [form, setForm] = useState({ ...EMPTY, ...(initial || {}) })
   const [err, setErr] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [galleryUploading, setGalleryUploading] = useState(false)
   const fileRef = useRef(null)
+  const galleryRef = useRef(null)
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -49,8 +51,29 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
     }
   }
 
+  const handleGalleryFiles = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    const current = form.gallery_urls || []
+    if (current.length + files.length > 5) { setErr('מקסימום 5 תמונות בגלריה'); return }
+    setGalleryUploading(true); setErr('')
+    try {
+      const urls = await Promise.all(files.slice(0, 5 - current.length).map(f => uploadGallery(f)))
+      set('gallery_urls', [...current, ...urls])
+    } catch (ex) {
+      setErr(ex.message || 'העלאת תמונה נכשלה')
+    } finally {
+      setGalleryUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const removeGallery = (idx) => {
+    set('gallery_urls', (form.gallery_urls || []).filter((_, i) => i !== idx))
+  }
+
   const isEdit = Boolean(initial?.id)
-  const glyph = form.emoji?.trim() || categoryMeta(form.type).emoji
+  const glyph = categoryMeta(form.type).emoji
 
   return (
     <motion.div
@@ -197,16 +220,6 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
           </div>
 
           <div>
-            <label className={LABEL}>אימוג׳י (מוצג בפין במפה)</label>
-            <div className="flex items-center gap-3">
-              <input className={FIELD + ' flex-1'} value={form.emoji || ''}
-                     onChange={e => set('emoji', e.target.value)} placeholder="💆‍♀️" />
-              <span className="w-11 h-11 rounded-full shrink-0 flex items-center justify-center text-xl"
-                    style={{ background: categoryMeta(form.type).soft }}>{glyph}</span>
-            </div>
-          </div>
-
-          <div>
             <label className={LABEL}>לוגו (URL או העלאה)</label>
             <div className="flex items-center gap-3">
               <input className={FIELD + ' flex-1'} value={form.logo_url || ''}
@@ -222,6 +235,34 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
             <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
               className="mt-2 text-[12px] font-heebo font-medium text-[#C9A070] hover:text-[#1C1916] transition disabled:opacity-60">
               {uploading ? 'מעלה…' : '↑ העלאת קובץ לוגו'}
+            </button>
+          </div>
+
+          {/* Gallery images */}
+          <div>
+            <label className={LABEL}>תמונות גלריה (עד 5 תמונות)</label>
+            {(form.gallery_urls || []).length > 0 && (
+              <div className="flex gap-2 flex-wrap mb-2">
+                {(form.gallery_urls || []).map((url, i) => (
+                  <div key={i} className="relative">
+                    <img src={url} alt=""
+                         className="w-16 h-16 rounded-xl object-cover border border-[#E3DCD2]"
+                         onError={e => { e.currentTarget.style.opacity = '0.3' }} />
+                    <button type="button" onClick={() => removeGallery(i)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#C97A7A] text-white
+                                 flex items-center justify-center text-[11px] leading-none shadow">
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input ref={galleryRef} type="file" accept="image/*" multiple hidden onChange={handleGalleryFiles} />
+            <button type="button"
+              onClick={() => galleryRef.current?.click()}
+              disabled={galleryUploading || (form.gallery_urls || []).length >= 5}
+              className="text-[12px] font-heebo font-medium text-[#C9A070] hover:text-[#1C1916] transition disabled:opacity-60">
+              {galleryUploading ? 'מעלה…' : `↑ הוספת תמונות לגלריה (${(form.gallery_urls || []).length}/5)`}
             </button>
           </div>
 

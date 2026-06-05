@@ -22,6 +22,7 @@ const WRITABLE = [
   'rating', 'active', 'emoji', 'owner_name', 'years_experience',
   'owner_age', 'specialty', 'custom_description',
   'facebook_url', 'instagram_url', 'google_url', 'whatsapp',
+  'gallery_urls',
 ]
 
 function safeEqual(a, b) {
@@ -55,6 +56,15 @@ function sanitize(body) {
       if (v !== null && Number.isNaN(v)) v = null
     } else if (k === 'active') {
       v = v === true || v === 'true' || v === 1 || v === '1'
+    } else if (k === 'gallery_urls') {
+      if (Array.isArray(v)) {
+        v = v.filter(u => typeof u === 'string' && u.startsWith('http')).slice(0, 5)
+      } else if (typeof v === 'string') {
+        try { v = JSON.parse(v) } catch { v = [] }
+        if (!Array.isArray(v)) v = []
+      } else {
+        v = []
+      }
     } else if (typeof v === 'string') {
       v = v.trim()
       if (v === '') v = null

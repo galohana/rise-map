@@ -1,9 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { categoryMeta, pinGlyph } from '@/lib/categories'
 
-/* Mobile = <=768px → floating side card. Desktop = slide-in right. */
 function useIsMobile() {
   const [mobile, setMobile] = useState(
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false
@@ -30,7 +29,152 @@ function SectionDivider() {
   return <div className="h-px bg-zinc-200/70" />
 }
 
-/* ── Social + Waze icon row (each shown only when a link exists; Waze always) ── */
+/* ── Fanned cards gallery ── */
+function GalleryFan({ images, onExpand }) {
+  const STRIP = 20
+  const CARD_H = 140
+  const count = Math.min(images.length, 3)
+  const containerH = CARD_H + (count - 1) * STRIP
+  const rotations = [1.5, -3, -7]
+
+  return (
+    <motion.div
+      className="relative mx-auto cursor-pointer"
+      style={{ height: `${containerH}px`, maxWidth: '260px', width: '100%' }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onExpand}
+    >
+      {images.slice(0, count).map((url, i) => {
+        // i=0 → front card (highest z, lowest top position)
+        // i=count-1 → back card (lowest z, top=0, only strip visible)
+        const topOffset = (count - 1 - i) * STRIP
+        const zIdx = i + 1
+        const rot = rotations[count - 1 - i] ?? 0
+        const isFront = i === 0
+        return (
+          <motion.div
+            key={i}
+            className="absolute left-0 right-0 rounded-xl overflow-hidden"
+            style={{
+              top: `${topOffset}px`,
+              height: `${CARD_H}px`,
+              zIndex: zIdx,
+              transform: `rotate(${rot}deg)`,
+              border: '2.5px solid white',
+              boxShadow: isFront
+                ? '0 6px 24px rgba(0,0,0,0.22)'
+                : '0 2px 8px rgba(0,0,0,0.1)',
+              opacity: isFront ? 1 : 0.88,
+            }}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: isFront ? 1 : 0.88, y: 0 }}
+            transition={{ delay: i * 0.07, type: 'spring', stiffness: 300, damping: 28 }}
+          >
+            <img src={url} alt="" className="w-full h-full object-cover" />
+          </motion.div>
+        )
+      })}
+
+      {images.length > 3 && (
+        <div className="absolute z-[10] bg-black/55 text-white text-[10px] rounded-full px-2 py-0.5 font-heebo"
+             style={{ bottom: 8, left: 8 }}>
+          +{images.length - 3}
+        </div>
+      )}
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="absolute z-[10] text-[10px] font-heebo text-white rounded-full px-2 py-0.5"
+        style={{ bottom: 8, right: 8, background: 'rgba(0,0,0,0.38)' }}
+      >
+        הקש לצפייה
+      </motion.div>
+    </motion.div>
+  )
+}
+
+/* ── Carousel (shown after clicking fan) ── */
+function GalleryCarousel({ images, onClose, color }) {
+  const [idx, setIdx] = useState(0)
+
+  const prev = () => setIdx(i => (i - 1 + images.length) % images.length)
+  const next = () => setIdx(i => (i + 1) % images.length)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      className="relative rounded-xl overflow-hidden"
+      style={{ height: '180px' }}
+    >
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={idx}
+          src={images[idx]}
+          alt=""
+          initial={{ opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.22 }}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      </AnimatePresence>
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
+
+      {images.length > 1 && (
+        <>
+          <button onClick={prev} aria-label="הקודם"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full
+                       bg-black/40 hover:bg-black/60 flex items-center justify-center text-white
+                       text-lg transition-colors leading-none">
+            ›
+          </button>
+          <button onClick={next} aria-label="הבא"
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full
+                       bg-black/40 hover:bg-black/60 flex items-center justify-center text-white
+                       text-lg transition-colors leading-none">
+            ‹
+          </button>
+
+          {/* Dots */}
+          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 items-center">
+            {images.map((_, i) => (
+              <motion.button
+                key={i}
+                onClick={() => setIdx(i)}
+                animate={{ width: i === idx ? 14 : 6, opacity: i === idx ? 1 : 0.55 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-full bg-white"
+                style={{ height: 6 }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Counter */}
+      <div className="absolute top-2 left-2 text-[10px] font-heebo text-white bg-black/40 rounded-full px-2 py-0.5">
+        {idx + 1}/{images.length}
+      </div>
+
+      {/* Close */}
+      <button onClick={onClose} aria-label="סגור גלריה"
+        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/60
+                   flex items-center justify-center text-white text-base transition-colors leading-none">
+        ×
+      </button>
+    </motion.div>
+  )
+}
+
+/* ── Social links ── */
 function SocialLinks({ studio }) {
   const lat = Number(studio.lat)
   const lng = Number(studio.lng)
@@ -77,6 +221,11 @@ export default function StudioPanel({ studio, onClose }) {
   const isMobile = useIsMobile()
   const { color, soft } = categoryMeta(studio.type)
   const glyph = pinGlyph(studio)
+  const [galleryOpen, setGalleryOpen] = useState(false)
+
+  const galleryImages = Array.isArray(studio.gallery_urls)
+    ? studio.gallery_urls.filter(Boolean)
+    : []
 
   useEffect(() => {
     const onKey = e => { if (e.key === 'Escape') onClose() }
@@ -104,7 +253,6 @@ export default function StudioPanel({ studio, onClose }) {
     boxShadow: `0 8px 40px ${color}33, 0 2px 12px rgba(0,0,0,0.08)`,
   }
 
-  // Mobile: floating card on the right, just below the filter row. Desktop: full-height slide-in.
   const mobileStyle = {
     position: 'fixed', right: 0, top: '104px', width: '75vw', height: '52vh',
     borderRadius: '20px 0 0 20px', zIndex: 1101,
@@ -137,7 +285,7 @@ export default function StudioPanel({ studio, onClose }) {
           </svg>
         </button>
 
-        {/* ── COMPACT HERO (horizontal, ~48px) ── */}
+        {/* ── COMPACT HERO ── */}
         <div className="flex-shrink-0 px-5 pt-5 pb-3 pe-12">
           <div className="flex items-center gap-3">
             {studio.logo_url ? (
@@ -174,6 +322,32 @@ export default function StudioPanel({ studio, onClose }) {
           variants={container} initial="hidden" animate="show"
           className="flex-1 overflow-y-auto px-5 pb-4 space-y-3"
         >
+          {/* Gallery — fanned cards or carousel */}
+          {galleryImages.length > 0 && (
+            <motion.div variants={item}>
+              <AnimatePresence mode="wait">
+                {galleryOpen ? (
+                  <GalleryCarousel
+                    key="carousel"
+                    images={galleryImages}
+                    onClose={() => setGalleryOpen(false)}
+                    color={color}
+                  />
+                ) : (
+                  <GalleryFan
+                    key="fan"
+                    images={galleryImages}
+                    onExpand={() => setGalleryOpen(true)}
+                  />
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {galleryImages.length > 0 && (
+            <motion.div variants={item}><SectionDivider /></motion.div>
+          )}
+
           <motion.div variants={item}><SocialLinks studio={studio} /></motion.div>
 
           <motion.div variants={item}><SectionDivider /></motion.div>

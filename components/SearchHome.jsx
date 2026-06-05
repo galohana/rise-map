@@ -13,86 +13,68 @@ export default function SearchHome({ studios, filters, onSearch, onCategorySelec
 
   return (
     <motion.div
-      className="fixed inset-0 z-[1000] flex flex-col"
-      style={{
-        background: 'linear-gradient(170deg, #fffef9 0%, #faf6ee 40%, #f5f0e8 100%)',
-      }}
+      className="fixed inset-0 z-[1000] flex flex-col overflow-hidden"
+      style={{ background: 'linear-gradient(170deg, #fffef9 0%, #faf6ee 40%, #f5f0e8 100%)' }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, y: -20, filter: 'blur(4px)', transition: { duration: 0.25 } }}
       transition={{ duration: 0.3 }}
       dir="rtl"
     >
-      {/* Soft gold radial glow — top center */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          top: '-5%', left: '50%', transform: 'translateX(-50%)',
-          width: '90vw', height: '60vh',
-          background: 'radial-gradient(ellipse at center top, rgba(201,168,76,0.18) 0%, transparent 62%)',
-          filter: 'blur(50px)',
-        }}
-      />
+      {/* Gold radial glow — top center */}
+      <div className="absolute pointer-events-none" style={{
+        top: '-10%', left: '50%', transform: 'translateX(-50%)',
+        width: '100vw', height: '65vh',
+        background: 'radial-gradient(ellipse at center top, rgba(201,168,76,0.17) 0%, transparent 60%)',
+        filter: 'blur(55px)',
+      }} />
       {/* Warm pink accent — bottom left */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          bottom: '5%', left: '5%',
-          width: '40vw', height: '35vh',
-          background: 'radial-gradient(ellipse, rgba(232,114,154,0.07) 0%, transparent 70%)',
-          filter: 'blur(55px)',
-        }}
-      />
+      <div className="absolute pointer-events-none" style={{
+        bottom: '8%', left: '-5%',
+        width: '50vw', height: '35vh',
+        background: 'radial-gradient(ellipse, rgba(232,114,154,0.06) 0%, transparent 70%)',
+        filter: 'blur(60px)',
+      }} />
 
-      {/* Header */}
-      <header className="relative z-10 flex items-center justify-center pt-7 pb-2 flex-shrink-0">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-14 overflow-hidden">
+
+        {/* RISE — hero wordmark */}
         <motion.button
           onClick={onOpenPromo}
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05, duration: 0.4 }}
-          whileHover={{ opacity: 0.7 }}
-          className="font-frank font-bold transition-opacity"
-          style={{ fontSize: '20px', color: '#a07c30', letterSpacing: '0.3em' }}
+          transition={{ delay: 0.04, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ opacity: 0.72 }}
+          whileTap={{ scale: 0.97 }}
+          className="font-frank font-bold leading-none mb-3 transition-opacity"
+          style={{
+            fontSize: 'clamp(54px, 18vw, 96px)',
+            color: '#a07c30',
+            letterSpacing: '0.22em',
+          }}
         >
           RISE
         </motion.button>
-      </header>
 
-      {/* Main hero */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-16">
-
-        {/* Title */}
-        <motion.div
-          className="text-center mb-9"
-          initial={{ opacity: 0, y: 28 }}
+        {/* Subtitle — professional tagline */}
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 0.15, duration: 0.5 }}
+          className="font-heebo text-center mb-8"
+          style={{ fontSize: '13px', color: '#b8a485', letterSpacing: '0.18em' }}
         >
-          <h1
-            className="font-frank text-center leading-[1.12]"
-            style={{ fontSize: 'clamp(34px, 8.5vw, 66px)', color: '#1a1714' }}
-          >
-            כל מה שיפה
-            <br />
-            <span style={{ color: '#a07c30' }}>קרוב אליך</span>
-          </h1>
-          <p
-            className="font-heebo text-[13px] mt-4"
-            style={{ color: '#9a8c7a' }}
-          >
-            מצאי סטודיו יופי מושלם בקרבתך
-          </p>
-        </motion.div>
+          ספריית סטודיואות יופי
+        </motion.p>
 
         {/* Search bar */}
         <motion.form
           onSubmit={handleSubmit}
           className="w-full mb-4"
           style={{ maxWidth: '440px' }}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="relative">
             <input
@@ -107,7 +89,7 @@ export default function SearchHome({ studios, filters, onSearch, onCategorySelec
                 paddingRight: '20px',
                 paddingLeft: '52px',
                 borderRadius: '16px',
-                background: 'rgba(255,255,255,0.85)',
+                background: 'rgba(255,255,255,0.88)',
                 border: '1.5px solid rgba(160,124,48,0.22)',
                 boxShadow: '0 2px 20px rgba(160,124,48,0.10), 0 1px 4px rgba(0,0,0,0.06)',
                 backdropFilter: 'blur(12px)',
@@ -132,8 +114,7 @@ export default function SearchHome({ studios, filters, onSearch, onCategorySelec
               aria-label="חיפוש"
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-                stroke="#a07c30" strokeWidth="2.2"
-                strokeLinecap="round" strokeLinejoin="round">
+                stroke="#a07c30" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
@@ -144,27 +125,30 @@ export default function SearchHome({ studios, filters, onSearch, onCategorySelec
         {/* Category chips */}
         <motion.div
           className="flex items-center gap-2 flex-wrap justify-center mb-6"
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.28, duration: 0.55 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
         >
-          {CATEGORIES.map(cat => {
+          {CATEGORIES.map((cat, i) => {
             const meta = categoryMeta(cat)
             return (
               <motion.button
                 key={cat}
                 onClick={() => onCategorySelect(cat)}
-                whileHover={{ scale: 1.07, y: -2 }}
+                whileHover={{ scale: 1.07, y: -2, boxShadow: `0 4px 16px ${meta.color}28` }}
                 whileTap={{ scale: 0.93 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + i * 0.07, duration: 0.4 }}
                 className="flex items-center gap-2 font-heebo text-sm"
                 style={{
                   padding: '8px 16px',
                   borderRadius: '100px',
-                  background: 'rgba(255,255,255,0.75)',
-                  border: `1.5px solid ${meta.color}45`,
+                  background: 'rgba(255,255,255,0.78)',
+                  border: `1.5px solid ${meta.color}48`,
                   color: meta.text,
-                  boxShadow: `0 2px 10px ${meta.color}18`,
-                  transition: 'transform 0.15s, box-shadow 0.15s',
+                  boxShadow: `0 2px 10px ${meta.color}16`,
+                  transition: 'box-shadow 0.2s',
                 }}
               >
                 <span style={{ fontSize: '15px' }}>{meta.emoji}</span>
@@ -179,16 +163,16 @@ export default function SearchHome({ studios, filters, onSearch, onCategorySelec
           onClick={onGeolocate}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-2 font-heebo text-sm transition-all"
+          transition={{ delay: 0.48 }}
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.94 }}
+          className="flex items-center gap-2 font-heebo text-sm"
           style={{
-            padding: '8px 18px',
+            padding: '9px 20px',
             borderRadius: '100px',
-            border: '1px solid rgba(160,124,48,0.25)',
+            border: '1px solid rgba(160,124,48,0.28)',
             color: '#9a8c7a',
-            background: 'rgba(255,255,255,0.5)',
+            background: 'rgba(255,255,255,0.52)',
           }}
         >
           <span>📍</span>

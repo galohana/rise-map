@@ -7,7 +7,6 @@ const TYPES = ['הכל', ...CATEGORIES]
 
 export default function FilterBar({ filters, onChange }) {
   const [focused, setFocused] = useState(false)
-
   const activeTypeColor = filters.type === 'הכל' ? '#18181B' : categoryMeta(filters.type).color
 
   return (
@@ -16,12 +15,12 @@ export default function FilterBar({ filters, onChange }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.12, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
       className="flex-shrink-0 bg-white/90 backdrop-blur-sm border-b border-zinc-100
-                 px-4 py-2.5 flex items-center gap-3"
+                 px-4 pt-3 pb-2.5 flex flex-col gap-2"
     >
-      {/* Search */}
+      {/* Row 1 — Search */}
       <div
         className={`relative flex items-center gap-2 border rounded-full px-3.5 py-2
-                    flex-shrink-0 w-44 sm:w-52 transition-all duration-300
+                    w-full transition-all duration-300
                     ${focused
                       ? 'border-amber-400 shadow-[0_0_0_3px_rgba(245,158,11,0.12)] bg-white'
                       : 'border-zinc-200 bg-zinc-50 hover:border-zinc-300'}`}
@@ -57,9 +56,7 @@ export default function FilterBar({ filters, onChange }) {
         )}
       </div>
 
-      <div className="h-4 w-px bg-zinc-200 shrink-0" />
-
-      {/* Type chips */}
+      {/* Row 2 — Category chips */}
       <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
         {TYPES.map(t => (
           <button
