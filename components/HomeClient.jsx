@@ -137,7 +137,7 @@ export default function HomeClient({ studios }) {
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#FAF8F5]" dir="rtl">
       <Header onOpenPromo={() => setPromoOpen(true)} />
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} studios={studios} />
 
       <main className="relative flex-1 min-h-0">
         <MapClient

@@ -15,29 +15,38 @@ const TILE_URL = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=$
 function makeIcon(studio, selected) {
   const { color } = categoryMeta(studio.type)
 
-  // ── Logo inside teardrop (same SVG shape, logo in the white disc) ──
+  // ── Logo inside teardrop — pure SVG with clipPath for pixel-perfect fit ──
   if (studio.logo_url) {
     const w = selected ? 50 : 38
     const h = selected ? 64 : 49
-    // Scale factor from the SVG viewBox (0 0 38 49) to actual pixel size
-    const scale = w / 38
-    const discR = (selected ? 12 : 10) * scale          // white circle radius
-    const discD = Math.round(discR * 2)                  // disc diameter px
-    const discTop = Math.round((18.5 - (selected ? 12 : 10)) * scale) // top offset
-    const discLeft = Math.round((19 - (selected ? 12 : 10)) * scale)  // left offset
+    const r   = selected ? 12 : 10     // logo circle radius in viewBox units
+    const cx  = 19                     // circle center x in viewBox
+    const cy  = 18.5                   // circle center y in viewBox
+    // Unique clip ID per studio so multiple markers don't share the same def
+    const clipId = `lc-${String(studio.id).replace(/[^a-z0-9]/gi, '')}`
     const ring = selected
       ? `<circle cx="19" cy="18.5" r="14.5" fill="none" stroke="${color}" stroke-width="2" opacity="0.45"/>`
       : ''
     const html = `
-      <div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 ${selected ? 5 : 3}px ${selected ? 6 : 4}px rgba(20,18,16,0.30))">
-        <svg width="${w}" height="${h}" viewBox="0 0 38 49" style="position:absolute;inset:0">
+      <div style="width:${w}px;height:${h}px;filter:drop-shadow(0 ${selected ? 5 : 3}px ${selected ? 6 : 4}px rgba(20,18,16,0.30))">
+        <svg width="${w}" height="${h}" viewBox="0 0 38 49">
+          <defs>
+            <clipPath id="${clipId}">
+              <circle cx="${cx}" cy="${cy}" r="${r}" />
+            </clipPath>
+          </defs>
+          <!-- teardrop -->
           <path d="M19 1 C9.06 1 1 9.06 1 19 C1 32 19 48 19 48 C19 48 37 32 37 19 C37 9.06 28.94 1 19 1 Z" fill="${color}"/>
-          <circle cx="19" cy="18.5" r="${selected ? 13 : 11}" fill="#ffffff"/>
+          <!-- white backing circle (slightly larger for 1px border effect) -->
+          <circle cx="${cx}" cy="${cy}" r="${r + 1}" fill="#ffffff"/>
+          <!-- logo clipped exactly to the circle -->
+          <image href="${studio.logo_url}"
+                 x="${cx - r}" y="${cy - r}"
+                 width="${r * 2}" height="${r * 2}"
+                 clip-path="url(#${clipId})"
+                 preserveAspectRatio="xMidYMid slice" />
           ${ring}
         </svg>
-        <div style="position:absolute;top:${discTop}px;left:${discLeft}px;width:${discD}px;height:${discD}px;border-radius:50%;overflow:hidden;background:#fff">
-          <img src="${studio.logo_url}" style="width:100%;height:100%;object-fit:cover;display:block" />
-        </div>
       </div>`
     return L.divIcon({
       html, className: 'rise-pin',
