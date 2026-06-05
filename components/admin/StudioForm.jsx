@@ -9,7 +9,8 @@ const EMPTY = {
   lat: '', lng: '', phone: '', url: '', years_experience: '',
   owner_age: '', specialty: '', custom_description: '',
   facebook_url: '', instagram_url: '', google_url: '', whatsapp: '',
-  logo_url: '', gallery_urls: [], gallery_display_type: 'fanned', active: true,
+  logo_url: '', gallery_urls: [], gallery_display_type: 'fanned',
+  is_accepting_clients: true, opening_hours: '', active: true,
 }
 
 const FIELD = 'w-full rounded-xl border border-[#E3DCD2] bg-white px-3.5 py-2.5 text-[14px] ' +
@@ -21,8 +22,9 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
   const [form, setForm] = useState({
     ...EMPTY,
     ...(initial || {}),
-    // Normalize: existing DB rows have null (column just added); treat as 'fanned'
     gallery_display_type: initial?.gallery_display_type || 'fanned',
+    is_accepting_clients: initial?.is_accepting_clients ?? true,
+    opening_hours: initial?.opening_hours || '',
   })
   const [err, setErr] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -322,6 +324,29 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
             </div>
           </div>
 
+          {/* Opening hours */}
+          <div>
+            <label className={LABEL}>שעות פעילות</label>
+            <input className={FIELD} value={form.opening_hours || ''}
+                   onChange={e => set('opening_hours', e.target.value)}
+                   placeholder="א׳-ה׳ 09:00-18:00 | שישי 09:00-14:00" />
+          </div>
+
+          {/* Is accepting clients */}
+          <div className="flex items-center justify-between rounded-xl border border-[#E3DCD2] bg-white px-3.5 py-3">
+            <div>
+              <p className="text-[14px] font-heebo font-medium text-[#1C1916]">פנוי/ה ללקוחות חדשים</p>
+              <p className="text-[11px] font-heebo text-[#A09A96]">כבוי = יוצג "לא פנוי" בכרטיס</p>
+            </div>
+            <button type="button" onClick={() => set('is_accepting_clients', !form.is_accepting_clients)}
+                    className={`relative w-12 h-7 rounded-full transition-colors ${form.is_accepting_clients ? 'bg-emerald-400' : 'bg-[#D9D1C6]'}`}>
+              <motion.span layout
+                className="absolute top-1 w-5 h-5 rounded-full bg-white shadow"
+                style={{ [form.is_accepting_clients ? 'right' : 'left']: 4 }} />
+            </button>
+          </div>
+
+          {/* Active on map */}
           <div className="flex items-center justify-between rounded-xl border border-[#E3DCD2] bg-white px-3.5 py-3">
             <div>
               <p className="text-[14px] font-heebo font-medium text-[#1C1916]">מוצג במפה</p>

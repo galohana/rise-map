@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { categoryMeta, pinGlyph } from '@/lib/categories'
+import { useFavorites } from '@/lib/useFavorites'
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(
@@ -26,14 +27,9 @@ const item = {
 }
 
 /* ── Poker-fan ×2.2 ──────────────────────────────────────────────────── */
-const FAN_ANGLES = {
-  1: [0],
-  2: [-16, 11],
-  3: [-21, -3, 15],
-}
-
-const CARD_W = 66   // 30 × 2.2
-const CARD_H = 92   // 42 × 2.2
+const FAN_ANGLES = { 1: [0], 2: [-16, 11], 3: [-21, -3, 15] }
+const CARD_W = 66
+const CARD_H = 92
 
 function PokerFan({ images, onClick }) {
   const [hovered, setHovered] = useState(false)
@@ -55,25 +51,16 @@ function PokerFan({ images, onClick }) {
           key={i}
           className="absolute overflow-hidden"
           style={{
-            width: CARD_W,
-            height: CARD_H,
-            bottom: 0,
-            left: '50%',
-            marginLeft: -(CARD_W / 2),
+            width: CARD_W, height: CARD_H,
+            bottom: 0, left: '50%', marginLeft: -(CARD_W / 2),
             transformOrigin: 'bottom center',
             zIndex: i + 1,
             border: '2.5px solid white',
             borderRadius: 12,
-            boxShadow: i === count - 1
-              ? '0 6px 20px rgba(0,0,0,0.32)'
-              : '0 3px 8px rgba(0,0,0,0.20)',
+            boxShadow: i === count - 1 ? '0 6px 20px rgba(0,0,0,0.32)' : '0 3px 8px rgba(0,0,0,0.20)',
           }}
           initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
-          animate={{
-            opacity: 1,
-            scale: 1,
-            rotate: hovered ? angles[i] * 1.45 : angles[i],
-          }}
+          animate={{ opacity: 1, scale: 1, rotate: hovered ? angles[i] * 1.45 : angles[i] }}
           transition={{
             opacity: { delay: (count - 1 - i) * 0.09, duration: 0.28 },
             scale:   { delay: (count - 1 - i) * 0.09, type: 'spring', stiffness: 340, damping: 26 },
@@ -85,7 +72,6 @@ function PokerFan({ images, onClick }) {
           <img src={url} alt="" className="w-full h-full object-cover" />
         </motion.div>
       ))}
-
       {images.length > 3 && (
         <div className="absolute -top-1 -right-1 z-20 w-5 h-5 rounded-full bg-zinc-800
                         text-white text-[9px] font-heebo font-bold flex items-center justify-center
@@ -97,17 +83,16 @@ function PokerFan({ images, onClick }) {
   )
 }
 
-/* ── Inline carousel — ported from eyebrowsweb GallerySection ───────── */
+/* ── Carousel (ported from eyebrowsweb infinite swipe) ───────────────── */
 function GalleryCarousel({ images, onOpen, color }) {
   const n = images.length
   if (!n) return null
 
-  // Triple-clone for infinite feel (same technique as eyebrowsweb)
   const all = [...images, ...images, ...images]
-  const trackRef   = useRef(null)
-  const posRef     = useRef(n)          // start at middle copy
-  const startXRef  = useRef(null)
-  const timerRef   = useRef(null)
+  const trackRef  = useRef(null)
+  const posRef    = useRef(n)
+  const startXRef = useRef(null)
+  const timerRef  = useRef(null)
   const [dotIdx, setDotIdx] = useState(0)
 
   const jumpTo = useCallback((idx, animate) => {
@@ -122,9 +107,7 @@ function GalleryCarousel({ images, onOpen, color }) {
 
   useEffect(() => {
     let id2
-    const id = requestAnimationFrame(() => {
-      id2 = requestAnimationFrame(() => jumpTo(n, false))
-    })
+    const id = requestAnimationFrame(() => { id2 = requestAnimationFrame(() => jumpTo(n, false)) })
     return () => { cancelAnimationFrame(id); cancelAnimationFrame(id2) }
   }, [n, jumpTo])
 
@@ -133,7 +116,7 @@ function GalleryCarousel({ images, onOpen, color }) {
     jumpTo(next, true)
     clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => {
-      if (posRef.current < n)          jumpTo(posRef.current + n, false)
+      if (posRef.current < n)           jumpTo(posRef.current + n, false)
       else if (posRef.current >= n * 2) jumpTo(posRef.current - n, false)
     }, 460)
   }
@@ -154,7 +137,6 @@ function GalleryCarousel({ images, onOpen, color }) {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* Sliding track */}
       <div
         ref={trackRef}
         className="flex h-full"
@@ -167,20 +149,13 @@ function GalleryCarousel({ images, onOpen, color }) {
             style={{ width: `${100 / all.length}%`, flexShrink: 0 }}
             onClick={onOpen}
           >
-            <img
-              src={url}
-              alt=""
-              draggable={false}
-              className="w-full h-full object-cover select-none"
-            />
+            <img src={url} alt="" draggable={false} className="w-full h-full object-cover select-none" />
           </div>
         ))}
       </div>
 
-      {/* Gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
 
-      {/* Arrows */}
       {n > 1 && (
         <>
           <button onClick={() => slide(-1)} aria-label="הקודם"
@@ -196,31 +171,24 @@ function GalleryCarousel({ images, onOpen, color }) {
         </>
       )}
 
-      {/* Dots */}
       {n > 1 && (
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
           {images.map((_, i) => (
             <motion.button
               key={i}
-              onClick={() => { const target = n + i; jumpTo(target, true) }}
-              animate={{
-                width: i === dotIdx ? 16 : 6,
-                background: i === dotIdx ? color : 'rgba(255,255,255,0.6)',
-              }}
+              onClick={() => jumpTo(n + i, true)}
+              animate={{ width: i === dotIdx ? 16 : 6, background: i === dotIdx ? color : 'rgba(255,255,255,0.6)' }}
               transition={{ duration: 0.2 }}
-              className="rounded-full"
-              style={{ height: 6 }}
+              className="rounded-full" style={{ height: 6 }}
               aria-label={`תמונה ${i + 1}`}
             />
           ))}
         </div>
       )}
 
-      {/* Counter + expand */}
       <div className="absolute top-2 flex items-center justify-between inset-x-2 pointer-events-none">
         <button onClick={onOpen} aria-label="הגדל"
-          className="w-6 h-6 rounded-full flex items-center justify-center shadow pointer-events-auto
-                     transition-all hover:scale-110"
+          className="w-6 h-6 rounded-full flex items-center justify-center shadow pointer-events-auto transition-all hover:scale-110"
           style={{ background: 'rgba(255,255,255,0.76)' }}>
           <svg width="10" height="10" fill="none" stroke="#444" strokeWidth={2} viewBox="0 0 24 24">
             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
@@ -309,11 +277,9 @@ function GalleryLightbox({ images, color, onClose }) {
             <div className="flex items-center gap-2">
               {images.map((_, i) => (
                 <motion.button key={i} onClick={() => setIdx(i)}
-                  animate={{ width: i === idx ? 20 : 7, opacity: i === idx ? 1 : 0.38,
-                             background: i === idx ? color : '#ffffff' }}
+                  animate={{ width: i === idx ? 20 : 7, opacity: i === idx ? 1 : 0.38, background: i === idx ? color : '#ffffff' }}
                   transition={{ duration: 0.22 }}
-                  className="rounded-full" style={{ height: 7 }}
-                  aria-label={`תמונה ${i + 1}`} />
+                  className="rounded-full" style={{ height: 7 }} aria-label={`תמונה ${i + 1}`} />
               ))}
             </div>
             <button onClick={next} aria-label="הבא"
@@ -367,17 +333,31 @@ function SocialLinks({ studio }) {
   )
 }
 
+/* ── Heart icon ──────────────────────────────────────────────────────── */
+function HeartIcon({ filled, color }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24"
+      fill={filled ? color : 'none'}
+      stroke={filled ? color : '#aaa'}
+      strokeWidth={filled ? 0 : 2}
+      strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+    </svg>
+  )
+}
+
 /* ── Main export ─────────────────────────────────────────────────────── */
 export default function StudioPanel({ studio, onClose }) {
   const isMobile = useIsMobile()
   const { color, soft } = categoryMeta(studio.type)
   const glyph = pinGlyph(studio)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const { isFav, toggle: toggleFav } = useFavorites()
+  const fav = isFav(studio.id)
 
   const galleryImages = Array.isArray(studio.gallery_urls)
     ? studio.gallery_urls.filter(Boolean)
     : []
-  // null/undefined → default to 'fanned'
   const displayType = studio.gallery_display_type || 'fanned'
 
   useEffect(() => {
@@ -391,6 +371,9 @@ export default function StudioPanel({ studio, onClose }) {
   const hasSpecialty   = Boolean(studio.specialty?.trim())
   const hasDescription = Boolean(studio.custom_description?.trim())
   const hasUrl         = Boolean(studio.url?.trim())
+  const hasPhone       = Boolean(studio.phone?.trim())
+  const hasHours       = Boolean(studio.opening_hours?.trim())
+  const isAccepting    = studio.is_accepting_clients !== false // default true if null
   const hasInfo        = hasYears || hasSpecialty || studio.address || studio.city
 
   const panelMotion = isMobile
@@ -454,7 +437,7 @@ export default function StudioPanel({ studio, onClose }) {
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <h2 className="font-frank text-[17px] font-bold text-zinc-900 leading-tight truncate">
                   {studio.business_name}
                 </h2>
@@ -462,6 +445,26 @@ export default function StudioPanel({ studio, onClose }) {
                       style={{ background: soft, color }}>
                   {studio.type}
                 </span>
+                {/* Accepting clients badge */}
+                <span
+                  className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-heebo font-medium"
+                  style={isAccepting
+                    ? { background: 'rgba(16,185,129,0.10)', color: '#059669' }
+                    : { background: 'rgba(0,0,0,0.06)', color: '#888' }
+                  }
+                >
+                  {isAccepting ? '✓ פנוי' : '✗ לא פנוי'}
+                </span>
+                {/* Favorite heart */}
+                <motion.button
+                  onClick={() => toggleFav(studio.id)}
+                  whileTap={{ scale: 0.82 }}
+                  className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                  style={{ background: fav ? `${color}18` : 'transparent' }}
+                  aria-label={fav ? 'הסר ממועדפים' : 'הוסף למועדפים'}
+                >
+                  <HeartIcon filled={fav} color={color} />
+                </motion.button>
               </div>
               {studio.owner_name && (
                 <p className="font-heebo text-[12px] text-zinc-500 truncate mt-0.5">
@@ -480,19 +483,43 @@ export default function StudioPanel({ studio, onClose }) {
           <motion.div variants={item}><SocialLinks studio={studio} /></motion.div>
           <motion.div variants={item}><div className="h-px bg-zinc-200/70" /></motion.div>
 
-          {/* ── Carousel mode: full-width strip ── */}
-          {displayType === 'carousel' && galleryImages.length > 0 && (
-            <GalleryCarousel
-              images={galleryImages}
-              onOpen={() => setLightboxOpen(true)}
-              color={color}
-            />
+          {/* Phone */}
+          {hasPhone && (
+            <motion.div variants={item} className="flex justify-center">
+              <a href={`tel:${studio.phone}`}
+                 className="flex items-center gap-2 px-5 py-2 rounded-xl font-heebo text-[13px] font-medium
+                            transition-all hover:scale-105 active:scale-95"
+                 style={{ background: `${color}12`, color }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.5a19.79 19.79 0 01-3.07-8.67A2 2 0 012.18 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.06 6.06l1.27-.53a2 2 0 012.11.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+                </svg>
+                <span dir="ltr">{studio.phone}</span>
+              </a>
+            </motion.div>
           )}
 
-          {/* ── Info rows + optional fanned cards ── */}
+          {/* Hours */}
+          {hasHours && (
+            <motion.div variants={item} className="flex items-center gap-2 justify-center">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span className="font-heebo text-[12px] text-zinc-600">{studio.opening_hours}</span>
+            </motion.div>
+          )}
+
+          {(hasPhone || hasHours) && (
+            <motion.div variants={item}><div className="h-px bg-zinc-200/70" /></motion.div>
+          )}
+
+          {/* Carousel mode */}
+          {displayType === 'carousel' && galleryImages.length > 0 && (
+            <GalleryCarousel images={galleryImages} onOpen={() => setLightboxOpen(true)} color={color} />
+          )}
+
+          {/* Info rows + optional fanned cards */}
           {(hasInfo || (displayType === 'fanned' && galleryImages.length > 0)) && (
             <motion.div variants={item} className="flex items-start gap-3">
-              {/* Text — right side in RTL */}
               <div className="flex-1 min-w-0 space-y-2">
                 {(studio.address || studio.city) && (
                   <div className="flex items-center gap-1.5">
@@ -513,8 +540,6 @@ export default function StudioPanel({ studio, onClose }) {
                   </p>
                 )}
               </div>
-
-              {/* Poker fan — LEFT in RTL, only in fanned mode */}
               {displayType === 'fanned' && galleryImages.length > 0 && (
                 <PokerFan images={galleryImages} onClick={() => setLightboxOpen(true)} />
               )}
@@ -541,7 +566,12 @@ export default function StudioPanel({ studio, onClose }) {
               style={{ background: color, boxShadow: `0 4px 16px ${color}55` }}
               whileHover={{ scale: 1.02, boxShadow: `0 6px 22px ${color}66` }}
               whileTap={{ scale: 0.97 }}>
-              כניסה לאתר <span className="text-[16px] leading-none">←</span>
+              לקביעת תור
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
             </motion.a>
           </div>
         )}
@@ -549,8 +579,7 @@ export default function StudioPanel({ studio, onClose }) {
 
       <AnimatePresence>
         {lightboxOpen && (
-          <GalleryLightbox images={galleryImages} color={color}
-            onClose={() => setLightboxOpen(false)} />
+          <GalleryLightbox images={galleryImages} color={color} onClose={() => setLightboxOpen(false)} />
         )}
       </AnimatePresence>
     </>

@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Header from './Header'
 import FilterBar from './FilterBar'
 import StudioPanel from './StudioPanel'
-import StudioDrawer from './StudioDrawer'
 import PromoModal from './PromoModal'
 import SearchHome from './SearchHome'
 import ResultsList from './ResultsList'
@@ -18,14 +17,34 @@ const MapClient = dynamic(() => import('./MapClient'), {
 const isMobile = () =>
   typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
 
+/* ── SVG icons for the float button ─────────────────────────────────── */
+function MapIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="#5a5248" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+      <line x1="8" y1="2" x2="8" y2="18"/>
+      <line x1="16" y1="6" x2="16" y2="22"/>
+    </svg>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+      stroke="#5a5248" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="7"/>
+      <path d="m21 21-4.35-4.35"/>
+    </svg>
+  )
+}
+
 export default function HomeClient({ studios }) {
-  // 'home' | 'results' | 'map'
   const [view, setView] = useState('home')
   const [filters, setFilters] = useState({ type: 'הכל', search: '' })
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   const [panelStudio, setPanelStudio] = useState(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const [promoOpen, setPromoOpen] = useState(false)
   const [geoError, setGeoError] = useState('')
   const mapRef = useRef(null)
@@ -50,7 +69,6 @@ export default function HomeClient({ studios }) {
     const lat = Number(studio.lat)
     const lng = Number(studio.lng)
     if (Number.isNaN(lat) || Number.isNaN(lng)) return
-
     if (isMobile()) {
       map.flyTo([lat, lng], 15, { duration: 1 })
       map.once('moveend', () => {
@@ -65,11 +83,9 @@ export default function HomeClient({ studios }) {
     setView('map')
     setSelectedId(studio.id)
     setPanelStudio(studio)
-    setDrawerOpen(false)
     setTimeout(() => flyToStudio(studio), isMobile() ? 200 : 50)
   }, [flyToStudio])
 
-  // Close panel → always go back to home (not map)
   const handleClose = useCallback(() => {
     setPanelStudio(null)
     setSelectedId(null)
@@ -93,10 +109,6 @@ export default function HomeClient({ studios }) {
       onError?.('הדפדפן אינו תומך באיתור מיקום')
       return
     }
-
-    // iOS Safari REQUIRES getCurrentPosition to be called synchronously
-    // within the user-gesture handler — do NOT defer it behind a promise.
-    // Call it immediately, then handle the result.
     navigator.geolocation.getCurrentPosition(
       pos => {
         setGeoError('')
@@ -108,12 +120,11 @@ export default function HomeClient({ studios }) {
         }, 420)
       },
       err => {
-        if (err.code === 1 /* PERMISSION_DENIED */) {
+        if (err.code === 1) {
           const msg = 'לאיתור מיקום — אפשר גישה בהגדרות הדפדפן'
           setGeoError(msg)
           onError?.(msg)
         } else {
-          // Timeout / unavailable → just show the map
           setView('map')
         }
       },
@@ -125,11 +136,9 @@ export default function HomeClient({ studios }) {
 
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#FAF8F5]" dir="rtl">
-      {/* Map header + filter — always in DOM so map height stays constant */}
       <Header onOpenPromo={() => setPromoOpen(true)} />
       <FilterBar filters={filters} onChange={setFilters} />
 
-      {/* Full-screen map — always rendered (covered by overlays when not in map view) */}
       <main className="relative flex-1 min-h-0">
         <MapClient
           studios={filtered}
@@ -166,7 +175,7 @@ export default function HomeClient({ studios }) {
         )}
       </AnimatePresence>
 
-      {/* ── Floating dynamic button (bottom-left) ── */}
+      {/* ── Floating map/search button — SVG icons ── */}
       <motion.button
         onClick={() => setView(showMap ? 'home' : 'map')}
         initial={{ opacity: 0, scale: 0.8 }}
@@ -177,38 +186,26 @@ export default function HomeClient({ studios }) {
         aria-label={showMap ? 'חזרה לחיפוש' : 'פתיחת מפה'}
         className="fixed bottom-5 left-5 z-[1050] w-[52px] h-[52px] rounded-full flex items-center justify-center"
         style={{
-          background: 'rgba(255,255,255,0.76)',
+          background: 'rgba(255,255,255,0.85)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255,255,255,0.65)',
-          boxShadow: '0 6px 24px rgba(0,0,0,0.15)',
+          border: '1px solid rgba(255,255,255,0.7)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.14)',
         }}
       >
         <AnimatePresence mode="wait">
           <motion.span
-            key={showMap ? 'search-icon' : 'map-icon'}
+            key={showMap ? 'search' : 'map'}
             initial={{ opacity: 0, scale: 0.55, rotate: -18 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             exit={{ opacity: 0, scale: 0.55, rotate: 18 }}
             transition={{ duration: 0.18 }}
-            className="text-[22px] leading-none select-none"
+            className="flex items-center justify-center"
           >
-            {showMap ? '🔍' : '🗺️'}
+            {showMap ? <SearchIcon /> : <MapIcon />}
           </motion.span>
         </AnimatePresence>
       </motion.button>
-
-      {/* ── List drawer (map view only) ── */}
-      <AnimatePresence>
-        {drawerOpen && showMap && (
-          <StudioDrawer
-            studios={filtered}
-            selectedId={selectedId}
-            onCardClick={openStudio}
-            onClose={() => setDrawerOpen(false)}
-          />
-        )}
-      </AnimatePresence>
 
       {/* ── Studio detail panel ── */}
       <AnimatePresence>

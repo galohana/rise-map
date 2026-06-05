@@ -4,11 +4,24 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { CATEGORIES, categoryMeta } from '@/lib/categories'
 import { ISRAELI_CITIES } from '@/lib/israeli-cities'
 
-/* ── Build autocomplete suggestions ─────────────────────────────────── */
+/* ── Desktop detection ───────────────────────────────────────────────── */
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const fn = e => setDesktop(e.matches)
+    mq.addEventListener('change', fn)
+    return () => mq.removeEventListener('change', fn)
+  }, [])
+  return desktop
+}
+
+/* ── Autocomplete suggestions ────────────────────────────────────────── */
 function buildSuggestions(studios, query) {
   if (!query || query.length < 2) return []
   const q = query.trim().toLowerCase()
-
   const seen = new Set()
   const results = []
 
@@ -19,30 +32,15 @@ function buildSuggestions(studios, query) {
     results.push({ label, kind })
   }
 
-  // 1. Business names (exact substring match first)
-  studios.forEach(s => {
-    if (s.business_name && s.business_name.toLowerCase().includes(q))
-      push(s.business_name, 'business')
-  })
+  studios.forEach(s => { if (s.business_name?.toLowerCase().includes(q)) push(s.business_name, 'business') })
+  studios.forEach(s => { if (s.city?.toLowerCase().includes(q)) push(s.city, 'city') })
+  ISRAELI_CITIES.forEach(c => { if (c.includes(q)) push(c, 'city') })
 
-  // 2. Cities from DB studios
-  studios.forEach(s => {
-    if (s.city && s.city.toLowerCase().includes(q))
-      push(s.city, 'city')
-  })
-
-  // 3. Israeli cities static fallback
-  ISRAELI_CITIES.forEach(c => {
-    if (c.includes(q)) push(c, 'city')
-  })
-
-  // Sort: starts-with first, then contains
   results.sort((a, b) => {
-    const aStarts = a.label.toLowerCase().startsWith(q) ? 0 : 1
-    const bStarts = b.label.toLowerCase().startsWith(q) ? 0 : 1
-    return aStarts - bStarts
+    const aS = a.label.toLowerCase().startsWith(q) ? 0 : 1
+    const bS = b.label.toLowerCase().startsWith(q) ? 0 : 1
+    return aS - bS
   })
-
   return results.slice(0, 6)
 }
 
@@ -81,9 +79,8 @@ function GeoToast({ message, onClose }) {
 }
 
 /* ── Autocomplete dropdown ───────────────────────────────────────────── */
-function AutocompleteDropdown({ suggestions, onSelect, inputRef }) {
+function AutocompleteDropdown({ suggestions, onSelect }) {
   if (!suggestions.length) return null
-
   return (
     <motion.div
       initial={{ opacity: 0, y: -6, scaleY: 0.94 }}
@@ -101,7 +98,7 @@ function AutocompleteDropdown({ suggestions, onSelect, inputRef }) {
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         overflow: 'hidden',
-        zIndex: 10,
+        zIndex: 20,
         transformOrigin: 'top center',
       }}
     >
@@ -116,12 +113,10 @@ function AutocompleteDropdown({ suggestions, onSelect, inputRef }) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: i * 0.03 }}
         >
-          <span className="text-[15px] shrink-0">
-            {s.kind === 'business' ? '🏪' : '📍'}
-          </span>
+          <span className="text-[15px] shrink-0">{s.kind === 'business' ? '🏪' : '📍'}</span>
           <span className="flex-1 text-right text-zinc-800 truncate">{s.label}</span>
           <span
-            className="shrink-0 text-[10px] font-heebo rounded-full px-2 py-0.5"
+            className="shrink-0 text-[10px] rounded-full px-2 py-0.5"
             style={{
               background: s.kind === 'business' ? 'rgba(160,124,48,0.10)' : 'rgba(0,0,0,0.05)',
               color: s.kind === 'business' ? '#a07c30' : '#888',
@@ -146,15 +141,11 @@ export default function SearchHome({
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [localGeoErr, setLocalGeoErr] = useState('')
-  const inputRef = useRef(null)
   const wrapperRef = useRef(null)
+  const isDesktop = useIsDesktop()
 
-  // Show parent geo error in local toast too
-  useEffect(() => {
-    if (geoError) setLocalGeoErr(geoError)
-  }, [geoError])
+  useEffect(() => { if (geoError) setLocalGeoErr(geoError) }, [geoError])
 
-  // Rebuild suggestions when query changes
   useEffect(() => {
     if (query.length >= 2) {
       setSuggestions(buildSuggestions(studios, query))
@@ -165,12 +156,10 @@ export default function SearchHome({
     }
   }, [query, studios])
 
-  // Close dropdown on outside click
   useEffect(() => {
     const fn = e => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target))
         setShowSuggestions(false)
-      }
     }
     document.addEventListener('mousedown', fn)
     return () => document.removeEventListener('mousedown', fn)
@@ -188,13 +177,9 @@ export default function SearchHome({
     onSearch(label)
   }, [onSearch])
 
-  const handleKey = e => {
-    if (e.key === 'Escape') setShowSuggestions(false)
-  }
+  const handleKey = e => { if (e.key === 'Escape') setShowSuggestions(false) }
 
-  const handleGeoClick = () => {
-    onGeolocate(msg => setLocalGeoErr(msg))
-  }
+  const handleGeoClick = () => onGeolocate(msg => setLocalGeoErr(msg))
 
   const clearGeoErr = useCallback(() => {
     setLocalGeoErr('')
@@ -203,31 +188,56 @@ export default function SearchHome({
 
   return (
     <motion.div
-      className="fixed inset-0 z-[1000] flex flex-col overflow-hidden"
-      style={{ background: 'linear-gradient(170deg, #fffef9 0%, #faf6ee 40%, #f5f0e8 100%)' }}
+      className="fixed inset-0 z-[1000] flex flex-col items-center justify-center overflow-hidden"
+      style={{
+        background: isDesktop
+          ? 'rgba(250,247,240,0.55)'
+          : 'linear-gradient(170deg, #fffef9 0%, #faf6ee 40%, #f5f0e8 100%)',
+        backdropFilter: isDesktop ? 'blur(10px)' : 'none',
+        WebkitBackdropFilter: isDesktop ? 'blur(10px)' : 'none',
+      }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, y: -20, filter: 'blur(4px)', transition: { duration: 0.25 } }}
       transition={{ duration: 0.3 }}
       dir="rtl"
     >
-      {/* Gold radial glow — top */}
-      <div className="absolute pointer-events-none" style={{
-        top: '-10%', left: '50%', transform: 'translateX(-50%)',
-        width: '100vw', height: '65vh',
-        background: 'radial-gradient(ellipse at center top, rgba(201,168,76,0.17) 0%, transparent 60%)',
-        filter: 'blur(55px)',
-      }} />
-      {/* Pink accent — bottom left */}
-      <div className="absolute pointer-events-none" style={{
-        bottom: '8%', left: '-5%',
-        width: '50vw', height: '35vh',
-        background: 'radial-gradient(ellipse, rgba(232,114,154,0.06) 0%, transparent 70%)',
-        filter: 'blur(60px)',
-      }} />
+      {/* Mobile-only: warm glows */}
+      {!isDesktop && (
+        <>
+          <div className="absolute pointer-events-none" style={{
+            top: '-10%', left: '50%', transform: 'translateX(-50%)',
+            width: '100vw', height: '65vh',
+            background: 'radial-gradient(ellipse at center top, rgba(201,168,76,0.17) 0%, transparent 60%)',
+            filter: 'blur(55px)',
+          }} />
+          <div className="absolute pointer-events-none" style={{
+            bottom: '8%', left: '-5%',
+            width: '50vw', height: '35vh',
+            background: 'radial-gradient(ellipse, rgba(232,114,154,0.06) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }} />
+        </>
+      )}
 
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pb-14 overflow-hidden">
-
+      {/* Content card — glass on desktop, plain on mobile */}
+      <div
+        className="relative z-10 w-full flex flex-col items-center"
+        style={isDesktop ? {
+          maxWidth: '580px',
+          background: 'rgba(255,254,250,0.88)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderRadius: '28px',
+          border: '1px solid rgba(255,255,255,0.7)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.12), 0 2px 12px rgba(160,124,48,0.08)',
+          padding: '40px 44px 36px',
+        } : {
+          paddingLeft: '24px',
+          paddingRight: '24px',
+          paddingBottom: '56px',
+        }}
+      >
         {/* RISE wordmark */}
         <motion.button
           onClick={onOpenPromo}
@@ -236,12 +246,12 @@ export default function SearchHome({
           transition={{ delay: 0.04, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{ opacity: 0.72 }}
           whileTap={{ scale: 0.97 }}
-          className="flex flex-col items-center mb-8"
+          className="flex flex-col items-center mb-2"
         >
           <span
             className="font-frank font-bold leading-none"
             style={{
-              fontSize: 'clamp(46px, 14vw, 78px)',
+              fontSize: isDesktop ? '64px' : 'clamp(46px, 14vw, 78px)',
               color: '#a07c30',
               letterSpacing: '0.3em',
               paddingInlineStart: '0.3em',
@@ -261,19 +271,31 @@ export default function SearchHome({
           />
         </motion.button>
 
-        {/* Search bar + autocomplete */}
+        {/* Studio count */}
+        {studios.length > 0 && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="font-heebo text-center mb-7"
+            style={{ fontSize: '12px', color: '#b0a090', letterSpacing: '0.12em' }}
+          >
+            {studios.length} סטודיואות ברחבי הארץ
+          </motion.p>
+        )}
+
+        {/* Search + autocomplete */}
         <motion.div
           ref={wrapperRef}
-          className="w-full relative"
-          style={{ maxWidth: '440px' }}
+          className="w-full relative mb-4"
+          style={{ maxWidth: isDesktop ? '100%' : '440px' }}
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
-          <form onSubmit={handleSubmit} className="w-full mb-4">
+          <form onSubmit={handleSubmit} className="w-full">
             <div className="relative">
               <input
-                ref={inputRef}
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
@@ -321,14 +343,9 @@ export default function SearchHome({
             </div>
           </form>
 
-          {/* Autocomplete dropdown */}
           <AnimatePresence>
             {showSuggestions && suggestions.length > 0 && (
-              <AutocompleteDropdown
-                suggestions={suggestions}
-                onSelect={handleSelect}
-                inputRef={inputRef}
-              />
+              <AutocompleteDropdown suggestions={suggestions} onSelect={handleSelect} />
             )}
           </AnimatePresence>
         </motion.div>
@@ -336,6 +353,7 @@ export default function SearchHome({
         {/* Category chips */}
         <motion.div
           className="flex items-center gap-2 flex-wrap justify-center mb-6"
+          style={{ maxWidth: isDesktop ? '100%' : '440px' }}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
@@ -387,7 +405,11 @@ export default function SearchHome({
               background: 'rgba(255,255,255,0.52)',
             }}
           >
-            <span>📍</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+              <circle cx="12" cy="12" r="8" strokeDasharray="4 2" opacity="0.4"/>
+            </svg>
             <span>קרוב אליי</span>
           </motion.button>
 
@@ -397,7 +419,7 @@ export default function SearchHome({
             )}
           </AnimatePresence>
         </div>
-      </main>
+      </div>
 
       {/* SEO */}
       <div className="sr-only" aria-hidden="true">

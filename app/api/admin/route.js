@@ -24,6 +24,8 @@ const WRITABLE = [
   'facebook_url', 'instagram_url', 'google_url', 'whatsapp',
   'gallery_urls',
   'gallery_display_type',
+  'is_accepting_clients',
+  'opening_hours',
 ]
 
 function safeEqual(a, b) {
@@ -68,6 +70,8 @@ function sanitize(body) {
       }
     } else if (k === 'gallery_display_type') {
       v = ['fanned', 'carousel'].includes(v) ? v : 'fanned'
+    } else if (k === 'is_accepting_clients') {
+      v = v === true || v === 'true' || v === 1 || v === '1'
     } else if (typeof v === 'string') {
       v = v.trim()
       if (v === '') v = null
