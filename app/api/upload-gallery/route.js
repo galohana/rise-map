@@ -34,22 +34,27 @@ export async function POST(request) {
   try { form = await request.formData() } catch { return Response.json({ error: 'bad form' }, { status: 400 }) }
   const file = form.get('file')
   if (!file || typeof file === 'string') return Response.json({ error: 'no file' }, { status: 400 })
-  if (file.size > 5 * 1024 * 1024) return Response.json({ error: 'הקובץ גדול מדי (מקסימום 5MB)' }, { status: 400 })
+  if (file.size > 8 * 1024 * 1024) return Response.json({ error: 'הקובץ גדול מדי (מקסימום 8MB)' }, { status: 400 })
   if (!String(file.type).startsWith('image/')) return Response.json({ error: 'יש להעלות תמונה' }, { status: 400 })
 
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
-  const path = `gallery/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+  const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+  // Include pid + random to guarantee uniqueness even under concurrent requests
+  const uid = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+  const path = `gallery/${uid}.${ext}`
   const buffer = Buffer.from(await file.arrayBuffer())
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, buffer, {
     contentType: file.type,
     upsert: false,
   })
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[upload-gallery] storage error:', error.message, '| path:', path)
+    return Response.json({ error: error.message }, { status: 500 })
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
   return Response.json({ url: data.publicUrl })
