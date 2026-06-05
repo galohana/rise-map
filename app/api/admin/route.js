@@ -23,6 +23,7 @@ const WRITABLE = [
   'owner_age', 'specialty', 'custom_description',
   'facebook_url', 'instagram_url', 'google_url', 'whatsapp',
   'gallery_urls',
+  'gallery_display_type',
 ]
 
 function safeEqual(a, b) {
@@ -65,6 +66,8 @@ function sanitize(body) {
       } else {
         v = []
       }
+    } else if (k === 'gallery_display_type') {
+      v = ['fanned', 'carousel'].includes(v) ? v : 'fanned'
     } else if (typeof v === 'string') {
       v = v.trim()
       if (v === '') v = null

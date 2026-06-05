@@ -15,16 +15,27 @@ const TILE_URL = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=$
 function makeIcon(studio, selected) {
   const { color } = categoryMeta(studio.type)
 
-  // ── Logo badge ──
+  // ── Logo inside teardrop (same SVG shape, logo in the white disc) ──
   if (studio.logo_url) {
-    const d = selected ? 48 : 40           // circle diameter
-    const tail = 8
-    const w = d
-    const h = d + tail
+    const w = selected ? 50 : 38
+    const h = selected ? 64 : 49
+    // Scale factor from the SVG viewBox (0 0 38 49) to actual pixel size
+    const scale = w / 38
+    const discR = (selected ? 12 : 10) * scale          // white circle radius
+    const discD = Math.round(discR * 2)                  // disc diameter px
+    const discTop = Math.round((18.5 - (selected ? 12 : 10)) * scale) // top offset
+    const discLeft = Math.round((19 - (selected ? 12 : 10)) * scale)  // left offset
+    const ring = selected
+      ? `<circle cx="19" cy="18.5" r="14.5" fill="none" stroke="${color}" stroke-width="2" opacity="0.45"/>`
+      : ''
     const html = `
-      <div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 ${selected ? 5 : 3}px ${selected ? 6 : 4}px rgba(20,18,16,0.32))">
-        <div style="position:absolute;left:50%;bottom:${tail - 2}px;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid ${color}"></div>
-        <div style="width:${d}px;height:${d}px;border-radius:50%;overflow:hidden;background:#fff;box-sizing:border-box;border:2.5px solid ${color}">
+      <div style="position:relative;width:${w}px;height:${h}px;filter:drop-shadow(0 ${selected ? 5 : 3}px ${selected ? 6 : 4}px rgba(20,18,16,0.30))">
+        <svg width="${w}" height="${h}" viewBox="0 0 38 49" style="position:absolute;inset:0">
+          <path d="M19 1 C9.06 1 1 9.06 1 19 C1 32 19 48 19 48 C19 48 37 32 37 19 C37 9.06 28.94 1 19 1 Z" fill="${color}"/>
+          <circle cx="19" cy="18.5" r="${selected ? 13 : 11}" fill="#ffffff"/>
+          ${ring}
+        </svg>
+        <div style="position:absolute;top:${discTop}px;left:${discLeft}px;width:${discD}px;height:${discD}px;border-radius:50%;overflow:hidden;background:#fff">
           <img src="${studio.logo_url}" style="width:100%;height:100%;object-fit:cover;display:block" />
         </div>
       </div>`

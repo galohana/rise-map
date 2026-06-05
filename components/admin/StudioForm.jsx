@@ -9,7 +9,7 @@ const EMPTY = {
   lat: '', lng: '', phone: '', url: '', years_experience: '',
   owner_age: '', specialty: '', custom_description: '',
   facebook_url: '', instagram_url: '', google_url: '', whatsapp: '',
-  logo_url: '', gallery_urls: [], active: true,
+  logo_url: '', gallery_urls: [], gallery_display_type: 'fanned', active: true,
 }
 
 const FIELD = 'w-full rounded-xl border border-[#E3DCD2] bg-white px-3.5 py-2.5 text-[14px] ' +
@@ -272,6 +272,39 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
               className="text-[12px] font-heebo font-medium text-[#C9A070] hover:text-[#1C1916] transition disabled:opacity-60">
               {galleryUploading ? 'מעלה…' : `↑ הוספת תמונות לגלריה (${(form.gallery_urls || []).length}/5)`}
             </button>
+          </div>
+
+          {/* Gallery display type toggle */}
+          <div className="rounded-xl border border-[#E3DCD2] bg-white overflow-hidden">
+            <p className="text-[12px] font-heebo font-medium text-[#6B6460] px-3.5 pt-3 pb-2">
+              סוג תצוגת תמונות
+            </p>
+            <div className="flex border-t border-[#F0EBE4]">
+              {[
+                { value: 'fanned', label: 'קלפים מאוורר', icon: '🃏' },
+                { value: 'carousel', label: 'קרוסלה', icon: '🎠' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => set('gallery_display_type', opt.value)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-3 font-heebo text-[13px] transition-colors"
+                  style={{
+                    background: form.gallery_display_type === opt.value
+                      ? 'rgba(201,160,112,0.12)' : 'transparent',
+                    color: form.gallery_display_type === opt.value ? '#C9A070' : '#6B6460',
+                    fontWeight: form.gallery_display_type === opt.value ? '600' : '400',
+                    borderLeft: opt.value === 'carousel' ? '1px solid #F0EBE4' : 'none',
+                  }}
+                >
+                  <span>{opt.icon}</span>
+                  <span>{opt.label}</span>
+                  {form.gallery_display_type === opt.value && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9A070] shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center justify-between rounded-xl border border-[#E3DCD2] bg-white px-3.5 py-3">

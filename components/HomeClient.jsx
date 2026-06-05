@@ -27,6 +27,7 @@ export default function HomeClient({ studios }) {
   const [panelStudio, setPanelStudio] = useState(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [promoOpen, setPromoOpen] = useState(false)
+  const [geoError, setGeoError] = useState('')
   const mapRef = useRef(null)
 
   useEffect(() => {
@@ -87,16 +88,18 @@ export default function HomeClient({ studios }) {
     setView('results')
   }, [])
 
-  const handleGeolocate = useCallback(() => {
+  const handleGeolocate = useCallback((onError) => {
     if (!navigator.geolocation) {
-      setView('map')
+      onError?.('הדפדפן אינו תומך באיתור מיקום')
       return
     }
-    // Request location FIRST — triggers the browser permission dialog immediately.
-    // Only then switch to map, so the dialog fires while the user is still on the
-    // home screen (mobile Safari blocks permission dialogs outside user gestures).
+
+    // iOS Safari REQUIRES getCurrentPosition to be called synchronously
+    // within the user-gesture handler — do NOT defer it behind a promise.
+    // Call it immediately, then handle the result.
     navigator.geolocation.getCurrentPosition(
       pos => {
+        setGeoError('')
         setView('map')
         setTimeout(() => {
           mapRef.current?.flyTo(
@@ -104,7 +107,16 @@ export default function HomeClient({ studios }) {
           )
         }, 420)
       },
-      () => setView('map'), // denied or unavailable → just open the map
+      err => {
+        if (err.code === 1 /* PERMISSION_DENIED */) {
+          const msg = 'לאיתור מיקום — אפשר גישה בהגדרות הדפדפן'
+          setGeoError(msg)
+          onError?.(msg)
+        } else {
+          // Timeout / unavailable → just show the map
+          setView('map')
+        }
+      },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
     )
   }, [])
@@ -137,6 +149,8 @@ export default function HomeClient({ studios }) {
             onSearch={handleSearch}
             onCategorySelect={handleCategorySelect}
             onGeolocate={handleGeolocate}
+            geoError={geoError}
+            onClearGeoError={() => setGeoError('')}
             onOpenPromo={() => setPromoOpen(true)}
           />
         )}
