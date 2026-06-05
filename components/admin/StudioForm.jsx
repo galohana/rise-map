@@ -18,10 +18,15 @@ const FIELD = 'w-full rounded-xl border border-[#E3DCD2] bg-white px-3.5 py-2.5 
 const LABEL = 'block text-[12px] font-heebo font-medium text-[#6B6460] mb-1.5'
 
 export default function StudioForm({ initial, onSave, onCancel, saving }) {
-  const [form, setForm] = useState({ ...EMPTY, ...(initial || {}) })
+  const [form, setForm] = useState({
+    ...EMPTY,
+    ...(initial || {}),
+    // Normalize: existing DB rows have null (column just added); treat as 'fanned'
+    gallery_display_type: initial?.gallery_display_type || 'fanned',
+  })
   const [err, setErr] = useState('')
   const [uploading, setUploading] = useState(false)
-  const [galleryUploading, setGalleryUploading] = useState(false)
+  const [galleryProgress, setGalleryProgress] = useState(null) // null | '1/3'
   const fileRef = useRef(null)
   const galleryRef = useRef(null)
 
@@ -55,17 +60,25 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
     const current = form.gallery_urls || []
-    if (current.length + files.length > 5) { setErr('מקסימום 5 תמונות בגלריה'); return }
-    setGalleryUploading(true); setErr('')
-    try {
-      const urls = await Promise.all(files.slice(0, 5 - current.length).map(f => uploadGallery(f)))
-      set('gallery_urls', [...current, ...urls])
-    } catch (ex) {
-      setErr(ex.message || 'העלאת תמונה נכשלה')
-    } finally {
-      setGalleryUploading(false)
-      e.target.value = ''
+    const allowed = Math.max(0, 5 - current.length)
+    const batch = files.slice(0, allowed)
+    if (!batch.length) { setErr('הגעת למקסימום 5 תמונות'); return }
+    setGalleryProgress(`0/${batch.length}`)
+    setErr('')
+    const uploaded = []
+    for (let i = 0; i < batch.length; i++) {
+      try {
+        const url = await uploadGallery(batch[i])
+        uploaded.push(url)
+        setGalleryProgress(`${i + 1}/${batch.length}`)
+      } catch (ex) {
+        setErr(`תמונה ${i + 1} נכשלה: ${ex.message || 'שגיאת שרת'}`)
+        // Continue with next files, don't abort
+      }
     }
+    if (uploaded.length) set('gallery_urls', [...current, ...uploaded])
+    setGalleryProgress(null)
+    e.target.value = ''
   }
 
   const removeGallery = (idx) => {
@@ -268,9 +281,11 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
             <input ref={galleryRef} type="file" accept="image/*" multiple hidden onChange={handleGalleryFiles} />
             <button type="button"
               onClick={() => galleryRef.current?.click()}
-              disabled={galleryUploading || (form.gallery_urls || []).length >= 5}
+              disabled={galleryProgress !== null || (form.gallery_urls || []).length >= 5}
               className="text-[12px] font-heebo font-medium text-[#C9A070] hover:text-[#1C1916] transition disabled:opacity-60">
-              {galleryUploading ? 'מעלה…' : `↑ הוספת תמונות לגלריה (${(form.gallery_urls || []).length}/5)`}
+              {galleryProgress !== null
+                ? `מעלה ${galleryProgress}…`
+                : `↑ הוספת תמונות לגלריה (${(form.gallery_urls || []).length}/5)`}
             </button>
           </div>
 
