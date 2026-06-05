@@ -36,10 +36,16 @@ function Gate({ onUnlock }) {
         className="w-full max-w-sm bg-white rounded-3xl border border-[#E8E2DC] shadow-[0_8px_40px_rgba(28,25,22,0.1)] p-7"
       >
         <div className="flex items-center gap-2.5 mb-1">
-          <div className="w-8 h-8 rounded-full bg-[#1C1916] flex items-center justify-center">
-            <span className="font-frank text-[11px] font-black text-[#C9A070]">R</span>
+          <div className="w-9 h-9 rounded-full bg-[#1C1916] flex items-center justify-center shrink-0"
+               style={{ boxShadow: '0 2px 8px rgba(28,25,22,0.28)' }}>
+            <span className="font-frank font-bold text-[13px] text-[#C9A070]"
+                  style={{ letterSpacing: '0.04em' }}>R</span>
           </div>
-          <span className="font-frank text-[20px] font-bold text-[#1C1916]">RISE Admin</span>
+          <div>
+            <span className="font-frank text-[18px] font-bold text-[#1C1916]"
+                  style={{ letterSpacing: '0.06em' }}>RISE</span>
+            <span className="font-heebo text-[13px] text-[#A09A96] ms-1.5">Admin</span>
+          </div>
         </div>
         <p className="text-[13px] font-heebo text-[#A09A96] mb-6">ניהול ספריית הסטודיואים</p>
 
@@ -76,11 +82,14 @@ function Row({ studio, onEdit, onDelete }) {
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97 }}
       className="flex items-center gap-3 bg-white rounded-2xl border border-[#E8E2DC] px-3.5 py-3"
     >
-      <span className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-lg overflow-hidden"
+      <span className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center overflow-hidden"
             style={{ background: m.soft }}>
         {studio.logo_url
           ? <img src={studio.logo_url} alt="" className="w-full h-full object-cover" />
-          : pinGlyph(studio)}
+          : <span className="font-frank font-bold text-[16px]" style={{ color: m.color }}>
+              {(studio.business_name || '?').charAt(0)}
+            </span>
+        }
       </span>
 
       <div className="flex-1 min-w-0">
@@ -174,11 +183,13 @@ export default function AdminPage() {
     <div className="h-[100dvh] overflow-y-auto bg-[#FAF8F5]" dir="rtl">
       <header className="sticky top-0 z-40 bg-[#FAF8F5]/95 backdrop-blur border-b border-[#E8E2DC]">
         <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-[#1C1916] flex items-center justify-center">
-              <span className="font-frank text-[10px] font-black text-[#C9A070]">R</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#1C1916] flex items-center justify-center shrink-0"
+                 style={{ boxShadow: '0 2px 6px rgba(28,25,22,0.22)' }}>
+              <span className="font-frank font-bold text-[12px] text-[#C9A070]">R</span>
             </div>
-            <span className="font-frank text-[18px] font-bold text-[#1C1916]">Admin</span>
+            <span className="font-frank font-bold text-[#1C1916]"
+                  style={{ fontSize: '17px', letterSpacing: '0.06em' }}>RISE</span>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/" className="text-[12px] font-heebo text-[#A09A96] hover:text-[#1C1916] transition">מפה</Link>

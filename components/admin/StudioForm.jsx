@@ -92,8 +92,16 @@ export default function StudioForm({ initial, onSave, onCancel, saving }) {
       >
         <div className="sticky top-0 bg-[#FAF8F5]/95 backdrop-blur border-b border-[#E8E2DC] px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-full flex items-center justify-center text-base"
-                  style={{ background: categoryMeta(form.type).soft }}>{glyph}</span>
+            {form.logo_url ? (
+              <img src={form.logo_url} alt=""
+                   onError={e => { e.currentTarget.style.display = 'none' }}
+                   className="w-8 h-8 rounded-full object-cover shrink-0 border border-[#E3DCD2]" />
+            ) : (
+              <span className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center font-frank font-bold text-[13px]"
+                    style={{ background: categoryMeta(form.type).soft, color: categoryMeta(form.type).color }}>
+                {(form.business_name || (isEdit ? '✏' : '+')).charAt(0)}
+              </span>
+            )}
             <h2 className="font-frank text-[18px] font-bold text-[#1C1916]">
               {isEdit ? 'עריכת סטודיו' : 'הוספת סטודיו'}
             </h2>

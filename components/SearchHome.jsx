@@ -46,23 +46,39 @@ export default function SearchHome({ studios, filters, onSearch, onCategorySelec
           transition={{ delay: 0.04, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{ opacity: 0.72 }}
           whileTap={{ scale: 0.97 }}
-          className="font-frank font-bold leading-none mb-3 transition-opacity"
-          style={{
-            fontSize: 'clamp(54px, 18vw, 96px)',
-            color: '#a07c30',
-            letterSpacing: '0.22em',
-          }}
+          className="flex flex-col items-center"
         >
-          RISE
+          <span
+            className="font-frank font-bold leading-none"
+            style={{
+              fontSize: 'clamp(46px, 14vw, 78px)',
+              color: '#a07c30',
+              letterSpacing: '0.3em',
+              paddingInlineStart: '0.3em', /* compensate trailing letter-spacing for optical centering */
+            }}
+          >
+            RISE
+          </span>
+          {/* Thin gold rule beneath wordmark */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ delay: 0.28, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              width: '36px', height: '1.5px', marginTop: '8px',
+              background: 'linear-gradient(90deg, transparent, #a07c30bb, transparent)',
+              borderRadius: '1px',
+            }}
+          />
         </motion.button>
 
-        {/* Subtitle — professional tagline */}
+        {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.5 }}
-          className="font-heebo text-center mb-8"
-          style={{ fontSize: '13px', color: '#b8a485', letterSpacing: '0.18em' }}
+          transition={{ delay: 0.18, duration: 0.5 }}
+          className="font-heebo text-center mt-3 mb-8"
+          style={{ fontSize: '12px', color: '#b0a090', letterSpacing: '0.2em' }}
         >
           ספריית סטודיואות יופי
         </motion.p>

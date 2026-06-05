@@ -5,12 +5,16 @@ import { CATEGORIES, categoryMeta, pinGlyph } from '@/lib/categories'
 function SocialMini({ studio }) {
   const links = []
   if (studio.facebook_url)
-    links.push({ key: 'fb', href: studio.facebook_url, label: 'Facebook', bg: '#1877F2', char: 'f' })
+    links.push({ key: 'fb', href: studio.facebook_url, label: 'Facebook', bg: '#1877F2',
+      svg: <path fill="#fff" d="M13.5 21v-7h2.3l.4-2.8h-2.7V9.4c0-.8.2-1.4 1.4-1.4h1.4V5.6c-.7-.1-1.4-.1-2.1-.1-2.1 0-3.5 1.3-3.5 3.6v2.1H8.3V14h2.3v7h2.9z"/> })
   if (studio.instagram_url)
-    links.push({ key: 'ig', href: studio.instagram_url, label: 'Instagram', bg: 'linear-gradient(45deg,#f09433,#dc2743,#bc1888)', char: '◉' })
+    links.push({ key: 'ig', href: studio.instagram_url, label: 'Instagram',
+      bg: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
+      svg: <><rect x="6" y="6" width="12" height="12" rx="3.5" fill="none" stroke="#fff" strokeWidth="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="#fff" strokeWidth="1.8"/><circle cx="15.6" cy="8.4" r="1" fill="#fff"/></> })
   if (studio.whatsapp) {
     const wa = String(studio.whatsapp).replace(/\D/g, '').replace(/^0/, '')
-    links.push({ key: 'wa', href: `https://wa.me/972${wa}`, label: 'WhatsApp', bg: '#25D366', char: 'W' })
+    links.push({ key: 'wa', href: `https://wa.me/972${wa}`, label: 'WhatsApp', bg: '#25D366',
+      svg: <path fill="#fff" d="M12 4a8 8 0 00-6.9 12l-1 3.6 3.7-1A8 8 0 1012 4zm0 1.6a6.4 6.4 0 11-3.3 11.9l-.3-.2-2.2.6.6-2.1-.2-.3A6.4 6.4 0 0112 5.6zm3.6 8c-.2-.1-1.2-.6-1.3-.6-.2-.1-.3-.1-.4.1l-.6.7c-.1.1-.2.1-.4 0a5.2 5.2 0 01-2.6-2.3c-.2-.3.2-.3.5-1 0-.1 0-.2 0-.3l-.6-1.4c-.1-.3-.3-.3-.4-.3h-.4a.8.8 0 00-.6.3c-.2.2-.7.7-.7 1.7s.8 2 .9 2.1c.1.2 1.6 2.5 3.9 3.4 1.5.6 2 .6 2.7.5.4 0 1.2-.5 1.4-1 .2-.5.2-.9.1-1z"/> })
   }
   if (!links.length) return null
   return (
@@ -21,7 +25,7 @@ function SocialMini({ studio }) {
            onClick={e => e.stopPropagation()}
            className="w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110 active:scale-95"
            style={{ background: l.bg, boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }}>
-          <span className="text-white text-[10px] font-bold leading-none">{l.char}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24">{l.svg}</svg>
         </a>
       ))}
     </div>
@@ -103,7 +107,7 @@ function ResultCard({ studio, onClick, index }) {
               className="font-heebo text-[12px] font-semibold shrink-0"
               style={{ color }}
             >
-              לחץ לפרטים ומפה ←
+              ראי פרטים ←
             </span>
           </div>
         </div>

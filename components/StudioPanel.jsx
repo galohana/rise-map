@@ -25,162 +25,216 @@ const item = {
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 380, damping: 30 } },
 }
 
-function SectionDivider() {
-  return <div className="h-px bg-zinc-200/70" />
+/* ── Poker-fan card gallery ──────────────────────────────────────────── */
+const FAN_ANGLES = {
+  1: [0],
+  2: [-16, 11],
+  3: [-21, -3, 15],
 }
 
-/* ── Fanned cards gallery ── */
-function GalleryFan({ images, onExpand }) {
-  const STRIP = 20
-  const CARD_H = 140
+function PokerFan({ images, onClick }) {
+  const [hovered, setHovered] = useState(false)
   const count = Math.min(images.length, 3)
-  const containerH = CARD_H + (count - 1) * STRIP
-  const rotations = [1.5, -3, -7]
+  const angles = FAN_ANGLES[count]
+  const CARD_W = 30
+  const CARD_H = 42
 
   return (
-    <motion.div
-      className="relative mx-auto cursor-pointer"
-      style={{ height: `${containerH}px`, maxWidth: '260px', width: '100%' }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
-      onClick={onExpand}
+    <motion.button
+      onClick={onClick}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      className="relative shrink-0"
+      style={{ width: '56px', height: '58px' }}
+      whileTap={{ scale: 0.88 }}
+      aria-label="פתיחת גלריה"
     >
-      {images.slice(0, count).map((url, i) => {
-        // i=0 → front card (highest z, lowest top position)
-        // i=count-1 → back card (lowest z, top=0, only strip visible)
-        const topOffset = (count - 1 - i) * STRIP
-        const zIdx = i + 1
-        const rot = rotations[count - 1 - i] ?? 0
-        const isFront = i === 0
-        return (
-          <motion.div
-            key={i}
-            className="absolute left-0 right-0 rounded-xl overflow-hidden"
-            style={{
-              top: `${topOffset}px`,
-              height: `${CARD_H}px`,
-              zIndex: zIdx,
-              transform: `rotate(${rot}deg)`,
-              border: '2.5px solid white',
-              boxShadow: isFront
-                ? '0 6px 24px rgba(0,0,0,0.22)'
-                : '0 2px 8px rgba(0,0,0,0.1)',
-              opacity: isFront ? 1 : 0.88,
-            }}
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: isFront ? 1 : 0.88, y: 0 }}
-            transition={{ delay: i * 0.07, type: 'spring', stiffness: 300, damping: 28 }}
-          >
-            <img src={url} alt="" className="w-full h-full object-cover" />
-          </motion.div>
-        )
-      })}
+      {images.slice(0, count).map((url, i) => (
+        <motion.div
+          key={i}
+          className="absolute overflow-hidden"
+          style={{
+            width: CARD_W,
+            height: CARD_H,
+            bottom: 0,
+            left: '50%',
+            marginLeft: -(CARD_W / 2),
+            transformOrigin: 'bottom center',
+            zIndex: i + 1,
+            border: '2px solid white',
+            borderRadius: 7,
+            boxShadow: i === count - 1
+              ? '0 4px 14px rgba(0,0,0,0.30)'
+              : '0 2px 5px rgba(0,0,0,0.18)',
+          }}
+          initial={{ opacity: 0, scale: 0.5, rotate: 0 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            rotate: hovered ? angles[i] * 1.45 : angles[i],
+          }}
+          transition={{
+            opacity: { delay: (count - 1 - i) * 0.09, duration: 0.28 },
+            scale: { delay: (count - 1 - i) * 0.09, type: 'spring', stiffness: 340, damping: 26 },
+            rotate: hovered
+              ? { type: 'spring', stiffness: 260, damping: 18 }
+              : { delay: (count - 1 - i) * 0.09, type: 'spring', stiffness: 320, damping: 28 },
+          }}
+        >
+          <img src={url} alt="" className="w-full h-full object-cover" />
+        </motion.div>
+      ))}
 
       {images.length > 3 && (
-        <div className="absolute z-[10] bg-black/55 text-white text-[10px] rounded-full px-2 py-0.5 font-heebo"
-             style={{ bottom: 8, left: 8 }}>
+        <div className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-zinc-800
+                        text-white text-[8px] font-heebo font-bold flex items-center justify-center
+                        shadow-sm border border-white/60">
           +{images.length - 3}
         </div>
       )}
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="absolute z-[10] text-[10px] font-heebo text-white rounded-full px-2 py-0.5"
-        style={{ bottom: 8, right: 8, background: 'rgba(0,0,0,0.38)' }}
-      >
-        הקש לצפייה
-      </motion.div>
-    </motion.div>
+    </motion.button>
   )
 }
 
-/* ── Carousel (shown after clicking fan) ── */
-function GalleryCarousel({ images, onClose, color }) {
-  const [idx, setIdx] = useState(0)
+/* ── Fullscreen lightbox ─────────────────────────────────────────────── */
+function GalleryLightbox({ images, initialIdx = 0, color, onClose }) {
+  const [idx, setIdx] = useState(initialIdx)
+
+  useEffect(() => {
+    const fn = e => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft') setIdx(i => (i + 1) % images.length)
+      if (e.key === 'ArrowRight') setIdx(i => (i - 1 + images.length) % images.length)
+    }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [images.length, onClose])
 
   const prev = () => setIdx(i => (i - 1 + images.length) % images.length)
   const next = () => setIdx(i => (i + 1) % images.length)
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className="relative rounded-xl overflow-hidden"
-      style={{ height: '180px' }}
+      className="fixed inset-0 z-[1200] flex flex-col items-center justify-center"
+      style={{ background: 'rgba(7, 5, 3, 0.96)' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
     >
-      <AnimatePresence mode="wait">
-        <motion.img
-          key={idx}
-          src={images[idx]}
-          alt=""
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -24 }}
-          transition={{ duration: 0.22 }}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      </AnimatePresence>
-
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
-
-      {images.length > 1 && (
-        <>
-          <button onClick={prev} aria-label="הקודם"
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full
-                       bg-black/40 hover:bg-black/60 flex items-center justify-center text-white
-                       text-lg transition-colors leading-none">
-            ›
-          </button>
-          <button onClick={next} aria-label="הבא"
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full
-                       bg-black/40 hover:bg-black/60 flex items-center justify-center text-white
-                       text-lg transition-colors leading-none">
-            ‹
-          </button>
-
-          {/* Dots */}
-          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 items-center">
-            {images.map((_, i) => (
-              <motion.button
-                key={i}
-                onClick={() => setIdx(i)}
-                animate={{ width: i === idx ? 14 : 6, opacity: i === idx ? 1 : 0.55 }}
-                transition={{ duration: 0.2 }}
-                className="rounded-full bg-white"
-                style={{ height: 6 }}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Counter */}
-      <div className="absolute top-2 left-2 text-[10px] font-heebo text-white bg-black/40 rounded-full px-2 py-0.5">
-        {idx + 1}/{images.length}
-      </div>
+      {/* Soft gold glow behind image */}
+      <div className="absolute pointer-events-none"
+        style={{
+          top: '30%', left: '50%', transform: 'translateX(-50%)',
+          width: '60vw', height: '50vh',
+          background: `radial-gradient(ellipse, ${color}22 0%, transparent 65%)`,
+          filter: 'blur(60px)',
+        }}
+      />
 
       {/* Close */}
-      <button onClick={onClose} aria-label="סגור גלריה"
-        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 hover:bg-black/60
-                   flex items-center justify-center text-white text-base transition-colors leading-none">
-        ×
+      <button
+        onClick={onClose}
+        className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center
+                   text-white/70 hover:text-white border border-white/15 hover:border-white/30
+                   transition-all"
+        style={{ background: 'rgba(255,255,255,0.08)' }}
+        aria-label="סגור"
+      >
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path d="M1 1l12 12M13 1L1 13" />
+        </svg>
       </button>
+
+      {/* Image block */}
+      <motion.div
+        initial={{ scale: 0.68, opacity: 0, y: 55 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.68, opacity: 0, y: 55 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+        className="relative w-full px-6"
+        style={{ maxWidth: '360px' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Image frame */}
+        <div className="relative rounded-2xl overflow-hidden shadow-2xl"
+          style={{
+            aspectRatio: '3/4',
+            boxShadow: `0 28px 80px rgba(0,0,0,0.65), 0 0 0 1px ${color}30`,
+          }}>
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={idx}
+              src={images[idx]}
+              alt=""
+              initial={{ opacity: 0, scale: 1.06 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              transition={{ duration: 0.28 }}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </AnimatePresence>
+
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent pointer-events-none" />
+
+          {/* Counter top-left */}
+          <div className="absolute top-3 left-3 font-heebo text-[11px] text-white/80 bg-black/40 rounded-full px-2.5 py-1">
+            {idx + 1} / {images.length}
+          </div>
+        </div>
+
+        {/* Navigation arrows */}
+        {images.length > 1 && (
+          <div className="flex items-center justify-between mt-4 px-1">
+            <button onClick={prev} aria-label="הקודם"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white/60
+                         hover:text-white border border-white/15 hover:border-white/35
+                         transition-all text-xl leading-none"
+              style={{ background: 'rgba(255,255,255,0.07)' }}>
+              ›
+            </button>
+
+            {/* Dots */}
+            <div className="flex items-center gap-2">
+              {images.map((_, i) => (
+                <motion.button
+                  key={i}
+                  onClick={() => setIdx(i)}
+                  animate={{
+                    width: i === idx ? 20 : 7,
+                    opacity: i === idx ? 1 : 0.38,
+                    background: i === idx ? color : '#ffffff',
+                  }}
+                  transition={{ duration: 0.22 }}
+                  className="rounded-full"
+                  style={{ height: 7 }}
+                  aria-label={`תמונה ${i + 1}`}
+                />
+              ))}
+            </div>
+
+            <button onClick={next} aria-label="הבא"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white/60
+                         hover:text-white border border-white/15 hover:border-white/35
+                         transition-all text-xl leading-none"
+              style={{ background: 'rgba(255,255,255,0.07)' }}>
+              ‹
+            </button>
+          </div>
+        )}
+      </motion.div>
     </motion.div>
   )
 }
 
-/* ── Social links ── */
+/* ── Social links row ────────────────────────────────────────────────── */
 function SocialLinks({ studio }) {
   const lat = Number(studio.lat)
   const lng = Number(studio.lng)
   const hasGeo = !Number.isNaN(lat) && !Number.isNaN(lng)
   const wa = studio.whatsapp ? String(studio.whatsapp).replace(/\D/g, '').replace(/^0/, '') : ''
-
   const icons = []
 
   if (studio.facebook_url)
@@ -217,27 +271,29 @@ function SocialLinks({ studio }) {
   )
 }
 
+/* ── Main export ─────────────────────────────────────────────────────── */
 export default function StudioPanel({ studio, onClose }) {
   const isMobile = useIsMobile()
   const { color, soft } = categoryMeta(studio.type)
   const glyph = pinGlyph(studio)
-  const [galleryOpen, setGalleryOpen] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
 
   const galleryImages = Array.isArray(studio.gallery_urls)
     ? studio.gallery_urls.filter(Boolean)
     : []
 
   useEffect(() => {
-    const onKey = e => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+    const fn = e => { if (e.key === 'Escape' && !lightboxOpen) onClose() }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [onClose, lightboxOpen])
 
   const hasAge = studio.owner_age != null && studio.owner_age !== ''
   const hasYears = studio.years_experience != null && studio.years_experience !== ''
   const hasSpecialty = Boolean(studio.specialty && String(studio.specialty).trim())
   const hasDescription = Boolean(studio.custom_description && String(studio.custom_description).trim())
   const hasUrl = Boolean(studio.url && String(studio.url).trim())
+  const hasInfo = hasYears || hasSpecialty || studio.address || studio.city
 
   const panelMotion = isMobile
     ? { initial: { x: '100%' }, animate: { x: 0 }, exit: { x: '100%' },
@@ -246,15 +302,15 @@ export default function StudioPanel({ studio, onClose }) {
         transition: { type: 'spring', stiffness: 300, damping: 30 } }
 
   const glass = {
-    background: 'rgba(255,255,255,0.82)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    border: `1.5px solid ${color}`,
-    boxShadow: `0 8px 40px ${color}33, 0 2px 12px rgba(0,0,0,0.08)`,
+    background: 'rgba(255,255,255,0.84)',
+    backdropFilter: 'blur(22px)',
+    WebkitBackdropFilter: 'blur(22px)',
+    border: `1.5px solid ${color}55`,
+    boxShadow: `0 8px 40px ${color}2e, 0 2px 12px rgba(0,0,0,0.08)`,
   }
 
   const mobileStyle = {
-    position: 'fixed', right: 0, top: '104px', width: '75vw', height: '52vh',
+    position: 'fixed', right: 0, top: '104px', width: '78vw', height: '54vh',
     borderRadius: '20px 0 0 20px', zIndex: 1101,
   }
   const desktopClass = 'fixed z-[1101] top-3 bottom-3 right-3 w-[380px] rounded-[20px]'
@@ -276,10 +332,14 @@ export default function StudioPanel({ studio, onClose }) {
         style={isMobile ? { ...glass, ...mobileStyle } : glass}
         {...panelMotion}
       >
+        {/* Subtle category top accent strip */}
+        <div className="flex-shrink-0 h-0.5 w-full"
+          style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }} />
+
         {/* Close */}
         <button onClick={onClose} aria-label="סגור"
           className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-white/70 hover:bg-white
-                     flex items-center justify-center text-zinc-600 shadow-sm transition">
+                     flex items-center justify-center text-zinc-500 shadow-sm transition-all">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -291,16 +351,16 @@ export default function StudioPanel({ studio, onClose }) {
             {studio.logo_url ? (
               <img src={studio.logo_url} alt={studio.business_name}
                    className="w-12 h-12 rounded-full object-cover shrink-0 shadow-sm"
-                   style={{ border: `2px solid ${color}` }} />
+                   style={{ border: `2.5px solid ${color}` }} />
             ) : (
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0 shadow-sm"
                    style={{ background: soft, border: `2px solid ${color}` }}>
                 {glyph}
               </div>
             )}
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h2 className="font-frank text-[18px] font-bold text-zinc-900 leading-tight truncate">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-frank text-[17px] font-bold text-zinc-900 leading-tight truncate">
                   {studio.business_name}
                 </h2>
                 <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-heebo font-semibold"
@@ -309,7 +369,7 @@ export default function StudioPanel({ studio, onClose }) {
                 </span>
               </div>
               {studio.owner_name && (
-                <p className="font-heebo text-[13px] text-zinc-500 truncate mt-0.5">
+                <p className="font-heebo text-[12px] text-zinc-500 truncate mt-0.5">
                   {studio.owner_name}{hasAge ? `, ${studio.owner_age}` : ''}
                 </p>
               )}
@@ -322,63 +382,60 @@ export default function StudioPanel({ studio, onClose }) {
           variants={container} initial="hidden" animate="show"
           className="flex-1 overflow-y-auto px-5 pb-4 space-y-3"
         >
-          {/* Gallery — fanned cards or carousel */}
-          {galleryImages.length > 0 && (
-            <motion.div variants={item}>
-              <AnimatePresence mode="wait">
-                {galleryOpen ? (
-                  <GalleryCarousel
-                    key="carousel"
-                    images={galleryImages}
-                    onClose={() => setGalleryOpen(false)}
-                    color={color}
-                  />
-                ) : (
-                  <GalleryFan
-                    key="fan"
-                    images={galleryImages}
-                    onExpand={() => setGalleryOpen(true)}
-                  />
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
-
-          {galleryImages.length > 0 && (
-            <motion.div variants={item}><SectionDivider /></motion.div>
-          )}
-
-          <motion.div variants={item}><SocialLinks studio={studio} /></motion.div>
-
-          <motion.div variants={item}><SectionDivider /></motion.div>
-
-          {/* Location */}
-          <motion.div variants={item} className="flex items-center justify-center gap-1.5 text-zinc-600">
-            <svg className="w-4 h-4 shrink-0" style={{ color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="font-heebo text-[14px] font-medium text-zinc-800">
-              {studio.address || studio.city}
-            </span>
+          {/* Social links */}
+          <motion.div variants={item}>
+            <SocialLinks studio={studio} />
           </motion.div>
 
-          {/* Expertise */}
-          {(hasYears || hasSpecialty) && (
-            <motion.div variants={item} className="text-center">
-              <p className="font-heebo text-[13.5px] text-zinc-600">
-                {hasYears && `${studio.years_experience} שנות ניסיון`}
-                {hasYears && hasSpecialty && ' · '}
-                {hasSpecialty && <span style={{ color }} className="font-medium">{studio.specialty}</span>}
-              </p>
+          <motion.div variants={item}>
+            <div className="h-px bg-zinc-200/70" />
+          </motion.div>
+
+          {/* Two-col: text info (right in RTL) + poker fan (left in RTL) */}
+          {(hasInfo || galleryImages.length > 0) && (
+            <motion.div variants={item} className="flex items-start gap-3">
+              {/* Text info — flex-1 → appears RIGHT in RTL */}
+              <div className="flex-1 min-w-0 space-y-2">
+                {/* Location */}
+                {(studio.address || studio.city) && (
+                  <div className="flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 shrink-0" style={{ color }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="font-heebo text-[13px] text-zinc-700 leading-tight">
+                      {studio.address || studio.city}
+                    </span>
+                  </div>
+                )}
+
+                {/* Expertise */}
+                {(hasYears || hasSpecialty) && (
+                  <p className="font-heebo text-[12.5px] text-zinc-500 leading-snug">
+                    {hasYears && (
+                      <span>{studio.years_experience} שנות ניסיון</span>
+                    )}
+                    {hasYears && hasSpecialty && <span className="text-zinc-300 mx-1">·</span>}
+                    {hasSpecialty && (
+                      <span style={{ color }} className="font-medium">{studio.specialty}</span>
+                    )}
+                  </p>
+                )}
+              </div>
+
+              {/* Poker fan — appears LEFT in RTL (last flex child) */}
+              {galleryImages.length > 0 && (
+                <PokerFan images={galleryImages} onClick={() => setLightboxOpen(true)} />
+              )}
             </motion.div>
           )}
 
           {/* Description */}
           {hasDescription && (
             <motion.div variants={item}>
-              <p className="font-heebo text-[13.5px] leading-relaxed italic text-[#6B5E4F] text-center px-1">
+              <p className="font-heebo text-[13px] leading-relaxed italic text-[#6B5E4F] px-1"
+                 style={{ borderRight: `2px solid ${color}40`, paddingRight: '10px' }}>
                 {studio.custom_description}
               </p>
             </motion.div>
@@ -387,18 +444,32 @@ export default function StudioPanel({ studio, onClose }) {
 
         {/* ── STICKY CTA ── */}
         {hasUrl && (
-          <div className="flex-shrink-0 p-4 border-t border-zinc-200/70 bg-white/40">
-            <a href={studio.url} target="_blank" rel="noopener noreferrer"
-               className="flex items-center justify-center gap-2 w-full h-12 rounded-xl
-                          font-heebo font-bold text-[15px] text-white
-                          transition-transform active:scale-[0.98]"
-               style={{ background: color, boxShadow: `0 4px 16px ${color}55` }}>
+          <div className="flex-shrink-0 p-4 border-t border-zinc-100 bg-white/50">
+            <motion.a
+              href={studio.url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full h-11 rounded-xl
+                         font-heebo font-bold text-[14px] text-white"
+              style={{ background: color, boxShadow: `0 4px 16px ${color}55` }}
+              whileHover={{ scale: 1.02, boxShadow: `0 6px 22px ${color}66` }}
+              whileTap={{ scale: 0.97 }}
+            >
               כניסה לאתר
-              <span className="text-[17px] leading-none">←</span>
-            </a>
+              <span className="text-[16px] leading-none">←</span>
+            </motion.a>
           </div>
         )}
       </motion.aside>
+
+      {/* ── Gallery lightbox (above panel) ── */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <GalleryLightbox
+            images={galleryImages}
+            color={color}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   )
 }

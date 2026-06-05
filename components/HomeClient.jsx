@@ -88,11 +88,25 @@ export default function HomeClient({ studios }) {
   }, [])
 
   const handleGeolocate = useCallback(() => {
-    setView('map')
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(pos => {
-      mapRef.current?.flyTo([pos.coords.latitude, pos.coords.longitude], 14, { duration: 1 })
-    }, () => {})
+    if (!navigator.geolocation) {
+      setView('map')
+      return
+    }
+    // Request location FIRST — triggers the browser permission dialog immediately.
+    // Only then switch to map, so the dialog fires while the user is still on the
+    // home screen (mobile Safari blocks permission dialogs outside user gestures).
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setView('map')
+        setTimeout(() => {
+          mapRef.current?.flyTo(
+            [pos.coords.latitude, pos.coords.longitude], 14, { duration: 1.2 }
+          )
+        }, 420)
+      },
+      () => setView('map'), // denied or unavailable → just open the map
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+    )
   }, [])
 
   const showMap = view === 'map'
