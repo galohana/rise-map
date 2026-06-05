@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { categoryMeta, pinGlyph } from '@/lib/categories'
 
@@ -97,46 +97,98 @@ function PokerFan({ images, onClick }) {
   )
 }
 
-/* ── Inline carousel ─────────────────────────────────────────────────── */
+/* ── Inline carousel — ported from eyebrowsweb GallerySection ───────── */
 function GalleryCarousel({ images, onOpen, color }) {
-  const [idx, setIdx] = useState(0)
-  if (!images.length) return null
+  const n = images.length
+  if (!n) return null
 
-  const prev = () => setIdx(i => (i - 1 + images.length) % images.length)
-  const next = () => setIdx(i => (i + 1) % images.length)
+  // Triple-clone for infinite feel (same technique as eyebrowsweb)
+  const all = [...images, ...images, ...images]
+  const trackRef   = useRef(null)
+  const posRef     = useRef(n)          // start at middle copy
+  const startXRef  = useRef(null)
+  const timerRef   = useRef(null)
+  const [dotIdx, setDotIdx] = useState(0)
+
+  const jumpTo = useCallback((idx, animate) => {
+    if (!trackRef.current) return
+    trackRef.current.style.transition = animate
+      ? 'transform 0.42s cubic-bezier(0.4,0,0.2,1)'
+      : 'none'
+    trackRef.current.style.transform = `translateX(${-idx * 100}%)`
+    posRef.current = idx
+    setDotIdx(((idx % n) + n) % n)
+  }, [n])
+
+  useEffect(() => {
+    let id2
+    const id = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => jumpTo(n, false))
+    })
+    return () => { cancelAnimationFrame(id); cancelAnimationFrame(id2) }
+  }, [n, jumpTo])
+
+  const slide = delta => {
+    const next = posRef.current + delta
+    jumpTo(next, true)
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      if (posRef.current < n)          jumpTo(posRef.current + n, false)
+      else if (posRef.current >= n * 2) jumpTo(posRef.current - n, false)
+    }, 460)
+  }
+
+  const onTouchStart = e => { startXRef.current = e.touches[0].clientX }
+  const onTouchEnd   = e => {
+    if (startXRef.current === null) return
+    const dx = e.changedTouches[0].clientX - startXRef.current
+    if (Math.abs(dx) > 40) slide(dx < 0 ? 1 : -1)
+    startXRef.current = null
+  }
 
   return (
     <motion.div
       variants={item}
       className="relative rounded-2xl overflow-hidden"
       style={{ height: '152px' }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
     >
-      <AnimatePresence mode="wait">
-        <motion.img
-          key={idx}
-          src={images[idx]}
-          alt=""
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.96 }}
-          transition={{ duration: 0.26 }}
-          className="absolute inset-0 w-full h-full object-cover cursor-pointer"
-          onClick={onOpen}
-        />
-      </AnimatePresence>
+      {/* Sliding track */}
+      <div
+        ref={trackRef}
+        className="flex h-full"
+        style={{ width: `${all.length * 100}%` }}
+      >
+        {all.map((url, i) => (
+          <div
+            key={i}
+            className="h-full overflow-hidden cursor-pointer"
+            style={{ width: `${100 / all.length}%`, flexShrink: 0 }}
+            onClick={onOpen}
+          >
+            <img
+              src={url}
+              alt=""
+              draggable={false}
+              className="w-full h-full object-cover select-none"
+            />
+          </div>
+        ))}
+      </div>
 
-      {/* Gradient overlay */}
+      {/* Gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
 
       {/* Arrows */}
-      {images.length > 1 && (
+      {n > 1 && (
         <>
-          <button onClick={prev} aria-label="הקודם"
+          <button onClick={() => slide(-1)} aria-label="הקודם"
             className="absolute top-1/2 right-2 -translate-y-1/2 w-7 h-7 rounded-full
                        flex items-center justify-center text-zinc-700 text-lg leading-none
                        shadow-md transition-all hover:scale-110 active:scale-90"
             style={{ background: 'rgba(255,255,255,0.88)' }}>›</button>
-          <button onClick={next} aria-label="הבא"
+          <button onClick={() => slide(1)} aria-label="הבא"
             className="absolute top-1/2 left-2 -translate-y-1/2 w-7 h-7 rounded-full
                        flex items-center justify-center text-zinc-700 text-lg leading-none
                        shadow-md transition-all hover:scale-110 active:scale-90"
@@ -145,15 +197,15 @@ function GalleryCarousel({ images, onOpen, color }) {
       )}
 
       {/* Dots */}
-      {images.length > 1 && (
+      {n > 1 && (
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
           {images.map((_, i) => (
             <motion.button
               key={i}
-              onClick={() => setIdx(i)}
+              onClick={() => { const target = n + i; jumpTo(target, true) }}
               animate={{
-                width: i === idx ? 16 : 6,
-                background: i === idx ? color : 'rgba(255,255,255,0.6)',
+                width: i === dotIdx ? 16 : 6,
+                background: i === dotIdx ? color : 'rgba(255,255,255,0.6)',
               }}
               transition={{ duration: 0.2 }}
               className="rounded-full"
@@ -174,9 +226,11 @@ function GalleryCarousel({ images, onOpen, color }) {
             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
           </svg>
         </button>
-        <span className="font-heebo text-[10px] text-white/85 bg-black/35 rounded-full px-2 py-0.5">
-          {idx + 1}/{images.length}
-        </span>
+        {n > 1 && (
+          <span className="font-heebo text-[10px] text-white/85 bg-black/35 rounded-full px-2 py-0.5">
+            {dotIdx + 1}/{n}
+          </span>
+        )}
       </div>
     </motion.div>
   )
