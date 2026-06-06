@@ -5,13 +5,25 @@
   --font-heebo: var(--ff-heebo), sans-serif;
 }
 
+:root {
+  --color-bg: #ffffff;
+  --color-primary: #1a6b7a;
+  --color-primary-light: #e8f4f6;
+  --color-primary-mid: #2a8a9d;
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b7280;
+  --color-card: #ffffff;
+  --color-border: #e5e7eb;
+  --color-shadow: rgba(26,107,122,0.08);
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
   margin: 0;
   padding: 0;
   direction: rtl;
-  background: #f4f4f5;
+  background: #ffffff;
 }
 
 body {

@@ -138,8 +138,8 @@ function MapControls() {
                      text-[13px] font-heebo font-medium text-zinc-700
                      shadow-[0_4px_16px_rgba(0,0,0,0.12)] hover:shadow-lg active:scale-95 transition disabled:opacity-60">
           {geo
-            ? <span className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-            : <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            ? <span className="w-4 h-4 border-2 border-[#1a6b7a] border-t-transparent rounded-full animate-spin" />
+            : <svg className="w-4 h-4 text-[#1a6b7a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>}

@@ -143,14 +143,18 @@ function ResultCard({ studio, onClick, index, isFav, onToggleFav }) {
   )
 }
 
-export default function ResultsList({ studios, filters, onBack, onCardClick, onFiltersChange }) {
+export default function ResultsList({ studios, filters, listMode, onBack, onCardClick, onFiltersChange }) {
   const activeCategory = filters.type !== 'הכל' ? filters.type : null
   const { isFav, toggle: toggleFav } = useFavorites()
+
+  const listTitle = listMode === 'favorites' ? '❤️ שאהבתי'
+    : listMode === 'history' ? '🕐 ביקרתי לאחרונה'
+    : null
 
   return (
     <motion.div
       className="fixed inset-0 z-[1000] flex flex-col"
-      style={{ background: '#FAF8F5' }}
+      style={{ background: '#ffffff' }}
       initial={{ opacity: 0, y: 22 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 22, transition: { duration: 0.22 } }}
@@ -161,7 +165,7 @@ export default function ResultsList({ studios, filters, onBack, onCardClick, onF
       <div
         className="sticky top-0 z-10 px-4 pt-4 pb-3 flex-shrink-0"
         style={{
-          background: 'rgba(250,248,245,0.93)',
+          background: 'rgba(255,255,255,0.96)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(0,0,0,0.06)',
@@ -178,19 +182,23 @@ export default function ResultsList({ studios, filters, onBack, onCardClick, onF
             </svg>
           </button>
           <span className="font-heebo text-[13px] text-zinc-500">
-            {studios.length === 0 ? 'לא נמצאו תוצאות' :
-              `${studios.length} ${studios.length === 1 ? 'סטודיו' : 'סטודיואות'}`}
-            {activeCategory ? ` · ${activeCategory}` : ''}
-            {filters.search ? ` · "${filters.search}"` : ''}
+            {listTitle ? listTitle : (
+              <>
+                {studios.length === 0 ? 'לא נמצאו תוצאות' :
+                  `${studios.length} ${studios.length === 1 ? 'סטודיו' : 'סטודיואות'}`}
+                {activeCategory ? ` · ${activeCategory}` : ''}
+                {filters.search ? ` · "${filters.search}"` : ''}
+              </>
+            )}
           </span>
         </div>
 
-        {/* Mini search */}
-        <div className="relative mb-2.5">
+        {/* Mini search — hidden in favorites/history mode */}
+        {!listMode && <div className="relative mb-2.5">
           <input
             type="text"
             value={filters.search}
-            onChange={e => onFiltersChange(prev => ({ ...prev, search: e.target.value }))}
+            onChange={e => onFiltersChange?.(prev => ({ ...prev, search: e.target.value }))}
             placeholder="עיר או שם עסק..."
             className="w-full font-heebo text-sm text-zinc-800"
             style={{
@@ -209,42 +217,44 @@ export default function ResultsList({ studios, filters, onBack, onCardClick, onF
           </svg>
           {filters.search && (
             <button
-              onClick={() => onFiltersChange(prev => ({ ...prev, search: '' }))}
+              onClick={() => onFiltersChange?.(prev => ({ ...prev, search: '' }))}
               className="absolute left-10 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors text-sm leading-none">
               ×
             </button>
           )}
-        </div>
+        </div>}
 
-        {/* Category chips */}
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => onFiltersChange(prev => ({ ...prev, type: 'הכל' }))}
-            className="shrink-0 px-3 py-1.5 rounded-full font-heebo text-[12px] transition-all"
-            style={{
-              background: !activeCategory ? '#1a1a1a' : 'transparent',
-              color: !activeCategory ? 'white' : '#555',
-              border: `1px solid ${!activeCategory ? '#1a1a1a' : 'rgba(0,0,0,0.12)'}`,
-            }}>
-            הכל
-          </button>
-          {CATEGORIES.map(cat => {
-            const meta = categoryMeta(cat)
-            const active = activeCategory === cat
-            return (
-              <button key={cat}
-                onClick={() => onFiltersChange(prev => ({ ...prev, type: active ? 'הכל' : cat }))}
-                className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full font-heebo text-[12px] transition-all"
-                style={{
-                  background: active ? meta.color : 'transparent',
-                  color: active ? 'white' : meta.text,
-                  border: `1px solid ${active ? meta.color : meta.color + '50'}`,
-                }}>
-                {meta.emoji} {meta.label}
-              </button>
-            )
-          })}
-        </div>
+        {/* Category chips — hidden in listMode */}
+        {!listMode && (
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => onFiltersChange?.(prev => ({ ...prev, type: 'הכל' }))}
+              className="shrink-0 px-3 py-1.5 rounded-full font-heebo text-[12px] transition-all"
+              style={{
+                background: !activeCategory ? '#1a6b7a' : 'transparent',
+                color: !activeCategory ? 'white' : '#555',
+                border: `1px solid ${!activeCategory ? '#1a6b7a' : 'rgba(0,0,0,0.12)'}`,
+              }}>
+              הכל
+            </button>
+            {CATEGORIES.map(cat => {
+              const meta = categoryMeta(cat)
+              const active = activeCategory === cat
+              return (
+                <button key={cat}
+                  onClick={() => onFiltersChange?.(prev => ({ ...prev, type: active ? 'הכל' : cat }))}
+                  className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full font-heebo text-[12px] transition-all"
+                  style={{
+                    background: active ? meta.color : 'transparent',
+                    color: active ? 'white' : meta.text,
+                    border: `1px solid ${active ? meta.color : meta.color + '50'}`,
+                  }}>
+                  {meta.emoji} {meta.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Cards — max-width on desktop */}

@@ -83,7 +83,7 @@ export default function FilterBar({ filters, onChange, studios = [] }) {
           className={`relative flex items-center gap-2 border rounded-full px-3.5 py-2
                       w-full transition-all duration-300
                       ${focused
-                        ? 'border-amber-400 shadow-[0_0_0_3px_rgba(245,158,11,0.12)] bg-white'
+                        ? 'border-[#1a6b7a] shadow-[0_0_0_3px_rgba(26,107,122,0.12)] bg-white'
                         : 'border-zinc-200 bg-zinc-50 hover:border-zinc-300'}`}
         >
           <svg className="w-3.5 h-3.5 text-zinc-400 shrink-0" fill="none" viewBox="0 0 24 24"

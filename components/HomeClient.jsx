@@ -8,6 +8,8 @@ import StudioPanel from './StudioPanel'
 import PromoModal from './PromoModal'
 import SearchHome from './SearchHome'
 import ResultsList from './ResultsList'
+import { addToHistory, useHistory } from '@/lib/useHistory'
+import { useFavorites } from '@/lib/useFavorites'
 
 const MapClient = dynamic(() => import('./MapClient'), {
   ssr: false,
@@ -21,7 +23,7 @@ const isMobile = () =>
 function MapIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-      stroke="#5a5248" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
       <line x1="8" y1="2" x2="8" y2="18"/>
       <line x1="16" y1="6" x2="16" y2="22"/>
@@ -32,7 +34,7 @@ function MapIcon() {
 function SearchIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-      stroke="#5a5248" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      stroke="#ffffff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="7"/>
       <path d="m21 21-4.35-4.35"/>
     </svg>
@@ -47,7 +49,10 @@ export default function HomeClient({ studios }) {
   const [panelStudio, setPanelStudio] = useState(null)
   const [promoOpen, setPromoOpen] = useState(false)
   const [geoError, setGeoError] = useState('')
+  const [listMode, setListMode] = useState(null) // null | 'favorites' | 'history'
   const mapRef = useRef(null)
+  const { isFav } = useFavorites()
+  const { history } = useHistory()
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(filters.search.trim()), 300)
@@ -62,6 +67,16 @@ export default function HomeClient({ studios }) {
     }
     return true
   })
+
+  const filteredForList = (() => {
+    if (listMode === 'favorites') return studios.filter(s => isFav(s.id))
+    if (listMode === 'history') {
+      const order = history.map(h => h.id)
+      const byId = Object.fromEntries(studios.map(s => [s.id, s]))
+      return order.map(id => byId[id]).filter(Boolean)
+    }
+    return filtered
+  })()
 
   const flyToStudio = useCallback(studio => {
     const map = mapRef.current
@@ -80,6 +95,7 @@ export default function HomeClient({ studios }) {
   }, [])
 
   const openStudio = useCallback(studio => {
+    addToHistory(studio)
     setView('map')
     setSelectedId(studio.id)
     setPanelStudio(studio)
@@ -95,6 +111,20 @@ export default function HomeClient({ studios }) {
   const handleMapReady = useCallback(map => { mapRef.current = map }, [])
 
   const handleSearch = useCallback(query => {
+    // special sentinel values from SearchHome buttons — open filtered ResultsList
+    if (query === '__favorites__') {
+      setListMode('favorites')
+      setFilters({ type: 'הכל', search: '' })
+      setView('results')
+      return
+    }
+    if (query === '__history__') {
+      setListMode('history')
+      setFilters({ type: 'הכל', search: '' })
+      setView('results')
+      return
+    }
+    setListMode(null)
     setFilters(prev => ({ ...prev, search: query }))
     setView('results')
   }, [])
@@ -161,16 +191,18 @@ export default function HomeClient({ studios }) {
             geoError={geoError}
             onClearGeoError={() => setGeoError('')}
             onOpenPromo={() => setPromoOpen(true)}
+            onStudioClick={openStudio}
           />
         )}
         {view === 'results' && (
           <ResultsList
             key="results"
-            studios={filtered}
-            filters={filters}
-            onBack={() => setView('home')}
+            studios={filteredForList}
+            filters={listMode ? { type: 'הכל', search: '' } : filters}
+            listMode={listMode}
+            onBack={() => { setView('home'); setListMode(null) }}
             onCardClick={openStudio}
-            onFiltersChange={setFilters}
+            onFiltersChange={listMode ? null : setFilters}
           />
         )}
       </AnimatePresence>
@@ -186,11 +218,9 @@ export default function HomeClient({ studios }) {
         aria-label={showMap ? 'חזרה לחיפוש' : 'פתיחת מפה'}
         className="fixed bottom-5 left-5 z-[1050] w-[52px] h-[52px] rounded-full flex items-center justify-center"
         style={{
-          background: 'rgba(255,255,255,0.85)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255,255,255,0.7)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.14)',
+          background: '#1a6b7a',
+          boxShadow: '0 4px 20px rgba(26,107,122,0.40)',
+          border: '1px solid rgba(26,107,122,0.8)',
         }}
       >
         <AnimatePresence mode="wait">
