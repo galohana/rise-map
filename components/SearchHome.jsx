@@ -304,7 +304,7 @@ export default function SearchHome({
     onClearGeoError?.()
   }, [onClearGeoError])
 
-  /* Nearby studios sorted by distance */
+  /* Nearby studios — sorted by distance if location known, else first 3 as preview */
   const nearbyStudios = userLocation
     ? studios
         .filter(s => !isNaN(Number(s.lat)) && !isNaN(Number(s.lng)))
@@ -314,7 +314,7 @@ export default function SearchHome({
         }))
         .sort((a, b) => a.dist - b.dist)
         .slice(0, 8)
-    : []
+    : studios.slice(0, 3)
 
   /* Favorite studios */
   const favStudios = studios.filter(s => isFav(s.id))
@@ -662,30 +662,34 @@ export default function SearchHome({
           )}
         </AnimatePresence>
 
-        {/* ── Nearby section ── */}
-        <AnimatePresence>
-          {nearbyStudios.length > 0 && (
-            <motion.div
-              className="w-full mb-5"
-              style={{ maxWidth: contentMaxW }}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: 0.1, duration: 0.35 }}
-            >
-              <SectionTitle
-                icon="📍"
-                title="עסקים קרובים אליך"
-                subtitle="ממוינים לפי מרחק מהמיקום הנוכחי שלך"
-              />
-              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-                {nearbyStudios.map(s => (
-                  <StudioMiniCard key={s.id} studio={s} dist={s.dist} onClick={handleStudioClick} />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* ── Nearby section — always shown when studios exist ── */}
+        {nearbyStudios.length > 0 && (
+          <motion.div
+            className="w-full mb-5"
+            style={{ maxWidth: contentMaxW }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.42, duration: 0.35 }}
+          >
+            <SectionTitle
+              icon="📍"
+              title="עסקים קרובים אליך"
+              subtitle={userLocation
+                ? "ממוינים לפי מרחק מהמיקום הנוכחי שלך"
+                : "אפשר גישה למיקום לסידור לפי מרחק"}
+            />
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+              {nearbyStudios.map(s => (
+                <StudioMiniCard
+                  key={s.id}
+                  studio={s}
+                  dist={s.dist}
+                  onClick={handleStudioClick}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* SEO hidden */}
         <div className="sr-only" aria-hidden="true">
