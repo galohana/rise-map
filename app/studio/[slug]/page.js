@@ -47,6 +47,9 @@ export default async function StudioPage({ params }) {
   const hasYears = studio.years_experience != null && studio.years_experience !== ''
   const hasSpecialty = Boolean(studio.specialty && String(studio.specialty).trim())
   const hasDescription = Boolean(studio.custom_description && String(studio.custom_description).trim())
+  const galleryImages = Array.isArray(studio.gallery_urls)
+    ? studio.gallery_urls.filter(Boolean)
+    : []
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -136,6 +139,22 @@ export default async function StudioPage({ params }) {
             <p className="text-[14px] leading-relaxed italic text-[#6B5E4F] mt-3">
               {studio.custom_description}
             </p>
+          )}
+
+          {/* Gallery */}
+          {galleryImages.length > 0 && (
+            <>
+              <div className="my-6 h-px bg-zinc-200/70" />
+              <div className={`grid gap-2 ${galleryImages.length === 1 ? 'grid-cols-1' : galleryImages.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                {galleryImages.map((url, i) => (
+                  <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                     className="block aspect-square overflow-hidden rounded-xl bg-zinc-100">
+                    <img src={url} alt={`${studio.business_name} — תמונה ${i + 1}`}
+                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                  </a>
+                ))}
+              </div>
+            </>
           )}
 
           {/* CTAs */}
