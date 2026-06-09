@@ -52,7 +52,6 @@ export async function POST(request) {
     upsert: false,
   })
   if (error) {
-    console.error('[upload-gallery] storage error:', error.message, '| path:', path)
     return Response.json({ error: error.message }, { status: 500 })
   }
 

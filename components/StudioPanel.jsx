@@ -69,7 +69,7 @@ function PokerFan({ images, onClick }) {
               : { delay: (count - 1 - i) * 0.09, type: 'spring', stiffness: 320, damping: 28 },
           }}
         >
-          <img src={url} alt="" className="w-full h-full object-cover" />
+          <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
         </motion.div>
       ))}
       {images.length > 3 && (
@@ -136,7 +136,7 @@ function GalleryCarousel({ images, onOpen, color }) {
           whileTap={{ cursor: 'grabbing' }}
         >
           <img
-            src={images[current]} alt="" draggable={false}
+            src={images[current]} alt="" draggable={false} loading="lazy"
             style={{ width: '100%', height: '100%', objectFit: 'cover', userSelect: 'none', pointerEvents: 'none' }}
           />
           <div style={{

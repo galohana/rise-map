@@ -8,6 +8,7 @@ import StudioPanel from './StudioPanel'
 import PromoModal from './PromoModal'
 import SearchHome from './SearchHome'
 import ResultsList from './ResultsList'
+import { TEAL } from '@/lib/theme'
 import { addToHistory, useHistory } from '@/lib/useHistory'
 import { useFavorites } from '@/lib/useFavorites'
 
@@ -218,7 +219,7 @@ export default function HomeClient({ studios }) {
         aria-label={showMap ? 'חזרה לחיפוש' : 'פתיחת מפה'}
         className="fixed bottom-5 left-5 z-[1050] w-[52px] h-[52px] rounded-full flex items-center justify-center"
         style={{
-          background: '#1a6b7a',
+          background: TEAL,
           boxShadow: '0 4px 20px rgba(26,107,122,0.40)',
           border: '1px solid rgba(26,107,122,0.8)',
         }}

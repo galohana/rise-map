@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { TEAL } from '@/lib/theme'
 
 function useIsDesktop() {
   const [d, setD] = useState(false)
@@ -24,7 +25,7 @@ export function RiseLogo({ height = 26 }) {
       />
       <div style={{
         position: 'absolute', inset: 0,
-        background: '#1a6b7a',
+        background: TEAL,
         mixBlendMode: 'screen',
         pointerEvents: 'none',
       }} />

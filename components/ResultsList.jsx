@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { CATEGORIES, categoryMeta, pinGlyph } from '@/lib/categories'
 import { useFavorites } from '@/lib/useFavorites'
+import { TEAL } from '@/lib/theme'
 
 function SocialMini({ studio }) {
   const links = []
@@ -231,9 +232,9 @@ export default function ResultsList({ studios, filters, listMode, onBack, onCard
               onClick={() => onFiltersChange?.(prev => ({ ...prev, type: 'הכל' }))}
               className="shrink-0 px-3 py-1.5 rounded-full font-heebo text-[12px] transition-all"
               style={{
-                background: !activeCategory ? '#1a6b7a' : 'transparent',
+                background: !activeCategory ? TEAL : 'transparent',
                 color: !activeCategory ? 'white' : '#555',
-                border: `1px solid ${!activeCategory ? '#1a6b7a' : 'rgba(0,0,0,0.12)'}`,
+                border: `1px solid ${!activeCategory ? TEAL : 'rgba(0,0,0,0.12)'}`,
               }}>
               הכל
             </button>

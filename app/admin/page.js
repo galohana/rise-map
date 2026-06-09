@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { adminApi, getPw, setPw, clearPw } from '@/lib/adminApi'
 import { categoryMeta, CATEGORIES } from '@/lib/categories'
 import StudioForm from '@/components/admin/StudioForm'
-
-const TEAL = '#1a6b7a'
+import { TEAL } from '@/lib/theme'
 
 /* ── Password gate ── */
 function Gate({ onUnlock }) {

@@ -2,10 +2,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CATEGORIES, categoryMeta } from '@/lib/categories'
-import { ISRAELI_CITIES } from '@/lib/israeli-cities'
 import { useFavorites } from '@/lib/useFavorites'
 import { useHistory } from '@/lib/useHistory'
 import { RiseLogo } from '@/components/Header'
+import { buildSuggestions } from '@/lib/suggestions'
+import { TEAL } from '@/lib/theme'
 
 /* ── Desktop detection ───────────────────────────────────────────────── */
 function useIsDesktop() {
@@ -30,29 +31,6 @@ function haversine(lat1, lon1, lat2, lon2) {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
-
-/* ── Autocomplete suggestions ────────────────────────────────────────── */
-function buildSuggestions(studios, query) {
-  if (!query || query.length < 2) return []
-  const q = query.trim().toLowerCase()
-  const seen = new Set()
-  const results = []
-  const push = (label, kind) => {
-    const key = label + kind
-    if (seen.has(key)) return
-    seen.add(key)
-    results.push({ label, kind })
-  }
-  studios.forEach(s => { if (s.business_name?.toLowerCase().includes(q)) push(s.business_name, 'business') })
-  studios.forEach(s => { if (s.city?.toLowerCase().includes(q)) push(s.city, 'city') })
-  ISRAELI_CITIES.forEach(c => { if (c.includes(q)) push(c, 'city') })
-  results.sort((a, b) => {
-    const aS = a.label.toLowerCase().startsWith(q) ? 0 : 1
-    const bS = b.label.toLowerCase().startsWith(q) ? 0 : 1
-    return aS - bS
-  })
-  return results.slice(0, 6)
 }
 
 /* ── Category SVG icons ──────────────────────────────────────────────── */
@@ -132,7 +110,7 @@ function GeoToast({ message, onClose }) {
         color: '#374151',
       }}
     >
-      <span style={{ color: '#1a6b7a' }}>📍</span>
+      <span style={{ color: TEAL }}>📍</span>
       <span>{message}</span>
       <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 ms-1">
         <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -193,7 +171,7 @@ function StudioMiniCard({ studio, dist, onClick, index = 0 }) {
         {studio.business_name}
       </span>
       {dist != null && (
-        <span style={{ fontSize: '11px', color: '#1a6b7a', fontWeight: 500 }}>
+        <span style={{ fontSize: '11px', color: TEAL, fontWeight: 500 }}>
           {dist < 1 ? `${Math.round(dist * 1000)} מ'` : `${dist.toFixed(1)} ק"מ`}
         </span>
       )}
@@ -407,7 +385,7 @@ export default function SearchHome({
                   color: '#1a1a1a',
                 }}
                 onFocus={e => {
-                  e.target.style.borderColor = '#1a6b7a'
+                  e.target.style.borderColor = TEAL
                   e.target.style.boxShadow = '0 0 0 3px rgba(26,107,122,0.12), 0 2px 12px rgba(0,0,0,0.06)'
                 }}
                 onBlur={e => {
@@ -422,7 +400,7 @@ export default function SearchHome({
                 style={{ width: '36px', height: '36px', background: 'rgba(26,107,122,0.10)' }}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-                  stroke="#1a6b7a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  stroke={TEAL} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="11" cy="11" r="8"/>
                   <path d="m21 21-4.35-4.35"/>
                 </svg>
@@ -465,7 +443,7 @@ export default function SearchHome({
                       className="shrink-0 text-[10px] rounded-full px-2 py-0.5"
                       style={{
                         background: s.kind === 'business' ? 'rgba(26,107,122,0.10)' : 'rgba(0,0,0,0.05)',
-                        color: s.kind === 'business' ? '#1a6b7a' : '#888',
+                        color: s.kind === 'business' ? TEAL : '#888',
                       }}
                     >
                       {s.kind === 'business' ? 'עסק' : 'עיר'}
@@ -505,7 +483,7 @@ export default function SearchHome({
                     background: '#ffffff',
                     border: '1.5px solid #e5e7eb',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                    color: '#1a6b7a',
+                    color: TEAL,
                     gap: '8px',
                     transition: 'box-shadow 0.2s, transform 0.2s',
                     cursor: 'pointer',
@@ -538,8 +516,8 @@ export default function SearchHome({
               height: '48px',
               borderRadius: '14px',
               background: '#ffffff',
-              border: '1.5px solid #1a6b7a',
-              color: '#1a6b7a',
+              border: `1.5px solid ${TEAL}`,
+              color: TEAL,
               boxShadow: '0 2px 8px rgba(26,107,122,0.08)',
             }}
           >
@@ -602,9 +580,9 @@ export default function SearchHome({
                 padding: '14px 8px 12px',
                 borderRadius: '14px',
                 background: active ? 'rgba(26,107,122,0.07)' : '#ffffff',
-                border: active ? '1.5px solid #1a6b7a' : '1.5px solid #e5e7eb',
+                border: active ? `1.5px solid ${TEAL}` : '1.5px solid #e5e7eb',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                color: '#1a6b7a',
+                color: TEAL,
                 gap: '8px',
                 cursor: 'pointer',
               }}

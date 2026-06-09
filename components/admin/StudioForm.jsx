@@ -3,8 +3,7 @@ import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { CATEGORIES, categoryMeta } from '@/lib/categories'
 import { uploadLogo, uploadGallery } from '@/lib/adminApi'
-
-const TEAL = '#1a6b7a'
+import { TEAL } from '@/lib/theme'
 
 const EMPTY = {
   business_name: '', owner_name: '', type: 'גבות', city: '', address: '',

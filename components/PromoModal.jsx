@@ -1,8 +1,7 @@
 'use client'
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
-
-const TEAL = '#1a6b7a'
+import { TEAL } from '@/lib/theme'
 
 export default function PromoModal({ onClose }) {
   useEffect(() => {
