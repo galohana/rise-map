@@ -87,13 +87,20 @@ function ScissorsIcon() {
     </svg>
   )
 }
-function LipstickIcon() {
+function HeartIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 4l-1.5 4h7L14 4z"/>
-      <rect x="8.5" y="8" width="7" height="10" rx="1.5"/>
-      <rect x="7.5" y="18" width="9" height="2" rx="1"/>
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+    </svg>
+  )
+}
+function ClockIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 7v5l3.5 2"/>
     </svg>
   )
 }
@@ -102,7 +109,6 @@ const CATEGORY_ICONS = {
   'גבות': EyeIcon,
   'לק': NailIcon,
   'מספרה': ScissorsIcon,
-  'קוסמטיקה': LipstickIcon,
 }
 
 /* ── Geo toast ───────────────────────────────────────────────────────── */
@@ -138,11 +144,14 @@ function GeoToast({ message, onClose }) {
 }
 
 /* ── Small studio mini-card (for nearby / favorites / history) ───────── */
-function StudioMiniCard({ studio, dist, onClick }) {
+function StudioMiniCard({ studio, dist, onClick, index = 0 }) {
   const { color, emoji } = categoryMeta(studio.type)
   return (
     <motion.button
       onClick={() => onClick(studio)}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, type: 'spring', stiffness: 320, damping: 28 }}
       whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(26,107,122,0.14)' }}
       whileTap={{ scale: 0.95 }}
       className="flex-shrink-0 flex flex-col items-center text-center font-heebo"
@@ -152,12 +161,10 @@ function StudioMiniCard({ studio, dist, onClick }) {
         border: '1.5px solid #e5e7eb',
         borderRadius: '16px',
         padding: '14px 10px 12px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        transition: 'box-shadow 0.2s',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
         cursor: 'pointer',
       }}
     >
-      {/* Avatar */}
       {studio.logo_url ? (
         <img
           src={studio.logo_url}
@@ -231,18 +238,11 @@ export default function SearchHome({
   const wrapperRef                      = useRef(null)
   const isDesktop                       = useIsDesktop()
 
+  const [showFavorites, setShowFavorites] = useState(false)
+  const [showHistory, setShowHistory]     = useState(false)
+
   const { isFav, toggle: toggleFav }    = useFavorites()
   const { history, refresh: refreshHistory } = useHistory()
-
-  /* Auto-request geolocation on mount (silent error) */
-  useEffect(() => {
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {}, // silent — don't show error on auto-request
-      { timeout: 10000, enableHighAccuracy: false, maximumAge: 300000 }
-    )
-  }, [])
 
   /* Refresh history when panel becomes visible */
   useEffect(() => { refreshHistory() }, [refreshHistory])
@@ -282,21 +282,11 @@ export default function SearchHome({
 
   const handleGeoClick = () => {
     setGeoLoading(true)
+    // Single call from user gesture — triggers native iOS location dialog
     onGeolocate(msg => {
       setLocalGeoErr(msg)
       setGeoLoading(false)
     })
-    // Also update local location for nearby section
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-          setGeoLoading(false)
-        },
-        () => setGeoLoading(false),
-        { timeout: 8000, enableHighAccuracy: false, maximumAge: 60000 }
-      )
-    }
   }
 
   const clearGeoErr = useCallback(() => {
@@ -355,7 +345,7 @@ export default function SearchHome({
       <div
         className="min-h-full flex flex-col items-center"
         style={{
-          padding: isDesktop ? '48px 24px 80px' : '28px 20px 80px',
+          padding: isDesktop ? '8px 24px 80px' : '0px 20px 80px',
         }}
       >
         {/* ── RISE Logo ── */}
@@ -366,11 +356,11 @@ export default function SearchHome({
           transition={{ delay: 0.04, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{ opacity: 0.78 }}
           whileTap={{ scale: 0.97 }}
-          className="mb-6 flex items-center justify-center"
+          className="mb-2 flex items-center justify-center"
           style={{ maxWidth: contentMaxW, width: '100%' }}
           aria-label="אודות RISE"
         >
-          <RiseLogo height={isDesktop ? 72 : 56} />
+          <RiseLogo height={isDesktop ? 190 : 163} />
         </motion.button>
 
         {/* ── Studio count ── */}
@@ -382,7 +372,7 @@ export default function SearchHome({
             className="font-heebo text-center mb-5"
             style={{ fontSize: '12px', color: '#9ca3af', letterSpacing: '0.08em' }}
           >
-            {studios.length} סטודיואות ברחבי הארץ
+            {studios.length} עסקים ברחבי הארץ
           </motion.p>
         )}
 
@@ -576,88 +566,111 @@ export default function SearchHome({
           )}
         </AnimatePresence>
 
-        {/* ── Favorites + History buttons ── */}
+        {/* ── Favorites + History buttons — styled like category cards ── */}
         <motion.div
-          className="w-full flex gap-2.5 mb-5"
+          className="w-full flex gap-2.5 mb-4"
           style={{ maxWidth: contentMaxW }}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.38, duration: 0.4 }}
         >
-          <motion.button
-            onClick={() => onSearch('__favorites__')}
-            whileHover={{ boxShadow: '0 4px 14px rgba(0,0,0,0.10)' }}
-            whileTap={{ scale: 0.97 }}
-            className="flex-1 flex items-center justify-center gap-2 font-heebo text-[13px] font-medium"
-            style={{
-              height: '44px',
-              borderRadius: '12px',
-              background: '#ffffff',
-              border: '1.5px solid #e5e7eb',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-              color: '#374151',
-            }}
-          >
-            <span>❤️</span>
-            <span>שאהבתי{favStudios.length > 0 ? ` (${favStudios.length})` : ''}</span>
-          </motion.button>
-          <motion.button
-            onClick={() => onSearch('__history__')}
-            whileHover={{ boxShadow: '0 4px 14px rgba(0,0,0,0.10)' }}
-            whileTap={{ scale: 0.97 }}
-            className="flex-1 flex items-center justify-center gap-2 font-heebo text-[13px] font-medium"
-            style={{
-              height: '44px',
-              borderRadius: '12px',
-              background: '#ffffff',
-              border: '1.5px solid #e5e7eb',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-              color: '#374151',
-            }}
-          >
-            <span>🕐</span>
-            <span>היסטוריה</span>
-          </motion.button>
+          {[
+            {
+              key: 'fav',
+              active: showFavorites,
+              onToggle: () => setShowFavorites(f => !f),
+              Icon: HeartIcon,
+              label: 'שאהבתי',
+              count: favStudios.length,
+            },
+            {
+              key: 'history',
+              active: showHistory,
+              onToggle: () => setShowHistory(h => !h),
+              Icon: ClockIcon,
+              label: 'היסטוריה',
+              count: historyStudios.length,
+            },
+          ].map(({ key, active, onToggle, Icon, label, count }) => (
+            <motion.button
+              key={key}
+              onClick={onToggle}
+              whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(26,107,122,0.14)' }}
+              whileTap={{ scale: 0.93 }}
+              className="flex-1 flex flex-col items-center justify-center font-heebo"
+              style={{
+                padding: '14px 8px 12px',
+                borderRadius: '14px',
+                background: active ? 'rgba(26,107,122,0.07)' : '#ffffff',
+                border: active ? '1.5px solid #1a6b7a' : '1.5px solid #e5e7eb',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                color: '#1a6b7a',
+                gap: '8px',
+                cursor: 'pointer',
+              }}
+            >
+              <Icon />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151' }}>
+                {label}{count > 0 ? ` (${count})` : ''}
+              </span>
+            </motion.button>
+          ))}
         </motion.div>
 
-        {/* ── Favorites section (inline if any) ── */}
+        {/* ── Favorites section (collapsible) ── */}
         <AnimatePresence>
-          {favStudios.length > 0 && (
+          {showFavorites && (
             <motion.div
               className="w-full mb-5"
-              style={{ maxWidth: contentMaxW }}
+              style={{ maxWidth: contentMaxW, overflow: 'hidden' }}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             >
-              <SectionTitle icon="❤️" title="שאהבתי" />
-              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-                {favStudios.map(s => (
-                  <StudioMiniCard key={s.id} studio={s} onClick={handleStudioClick} />
-                ))}
-              </div>
+              {favStudios.length > 0 ? (
+                <>
+                  <SectionTitle icon="❤️" title="שאהבתי" />
+                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                    {favStudios.map((s, i) => (
+                      <StudioMiniCard key={s.id} studio={s} index={i} onClick={handleStudioClick} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="font-heebo text-[13px] text-center py-4" style={{ color: '#9ca3af' }}>
+                  עדיין לא סימנת אהובים ❤️
+                </p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── History section (inline if any) ── */}
+        {/* ── History section (collapsible) ── */}
         <AnimatePresence>
-          {historyStudios.length > 0 && (
+          {showHistory && (
             <motion.div
               className="w-full mb-5"
-              style={{ maxWidth: contentMaxW }}
+              style={{ maxWidth: contentMaxW, overflow: 'hidden' }}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             >
-              <SectionTitle icon="🕐" title="ביקרתי לאחרונה" />
-              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-                {historyStudios.map((s, i) => (
-                  <StudioMiniCard key={s.id ?? i} studio={s} onClick={handleStudioClick} />
-                ))}
-              </div>
+              {historyStudios.length > 0 ? (
+                <>
+                  <SectionTitle icon="🕐" title="ביקרתי לאחרונה" />
+                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                    {historyStudios.map((s, i) => (
+                      <StudioMiniCard key={s.id ?? i} studio={s} index={i} onClick={handleStudioClick} />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="font-heebo text-[13px] text-center py-4" style={{ color: '#9ca3af' }}>
+                  עדיין לא ביקרת בעסקים 🕐
+                </p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

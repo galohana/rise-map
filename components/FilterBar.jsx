@@ -76,6 +76,7 @@ export default function FilterBar({ filters, onChange, studios = [] }) {
       transition={{ delay: 0.12, duration: 0.4, ease: [0.32, 0.72, 0, 1] }}
       className="flex-shrink-0 bg-white/90 backdrop-blur-sm border-b border-zinc-100
                  px-4 pt-3 pb-2.5 flex flex-col gap-2"
+      style={{ position: 'relative', zIndex: 500 }}
     >
       {/* Row 1 — Search + autocomplete */}
       <div ref={wrapperRef} className="relative">
@@ -137,7 +138,7 @@ export default function FilterBar({ filters, onChange, studios = [] }) {
                 borderRadius: '14px',
                 boxShadow: '0 8px 28px rgba(0,0,0,0.12)',
                 overflow: 'hidden',
-                zIndex: 200,
+                zIndex: 9999,
                 transformOrigin: 'top center',
               }}
             >

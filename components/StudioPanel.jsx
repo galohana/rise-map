@@ -83,123 +83,151 @@ function PokerFan({ images, onClick }) {
   )
 }
 
-/* ── Carousel (ported from eyebrowsweb infinite swipe) ───────────────── */
+/* ── Carousel — Framer Motion spring swipe ───────────────────────────── */
 function GalleryCarousel({ images, onOpen, color }) {
   const n = images.length
   if (!n) return null
 
-  const all = [...images, ...images, ...images]
-  const trackRef  = useRef(null)
-  const posRef    = useRef(n)
-  const startXRef = useRef(null)
-  const timerRef  = useRef(null)
-  const [dotIdx, setDotIdx] = useState(0)
+  const [current, setCurrent] = useState(0)
+  const [dir, setDir]         = useState(1)
+  const [paused, setPaused]   = useState(false)
 
-  const jumpTo = useCallback((idx, animate) => {
-    if (!trackRef.current) return
-    trackRef.current.style.transition = animate
-      ? 'transform 0.42s cubic-bezier(0.4,0,0.2,1)'
-      : 'none'
-    trackRef.current.style.transform = `translateX(${-idx * 100}%)`
-    posRef.current = idx
-    setDotIdx(((idx % n) + n) % n)
+  const go = useCallback((d) => {
+    setDir(d)
+    setCurrent(c => ((c + d) % n + n) % n)
   }, [n])
 
   useEffect(() => {
-    let id2
-    const id = requestAnimationFrame(() => { id2 = requestAnimationFrame(() => jumpTo(n, false)) })
-    return () => { cancelAnimationFrame(id); cancelAnimationFrame(id2) }
-  }, [n, jumpTo])
+    if (n <= 1 || paused) return
+    const id = setInterval(() => go(1), 3600)
+    return () => clearInterval(id)
+  }, [n, paused, go])
 
-  const slide = delta => {
-    const next = posRef.current + delta
-    jumpTo(next, true)
-    clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => {
-      if (posRef.current < n)           jumpTo(posRef.current + n, false)
-      else if (posRef.current >= n * 2) jumpTo(posRef.current - n, false)
-    }, 460)
-  }
-
-  const onTouchStart = e => { startXRef.current = e.touches[0].clientX }
-  const onTouchEnd   = e => {
-    if (startXRef.current === null) return
-    const dx = e.changedTouches[0].clientX - startXRef.current
-    if (Math.abs(dx) > 40) slide(dx < 0 ? 1 : -1)
-    startXRef.current = null
+  const variants = {
+    enter: d => ({ x: d > 0 ? '108%' : '-108%', scale: 0.9, opacity: 0 }),
+    center: { x: 0, scale: 1, opacity: 1 },
+    exit: d => ({ x: d < 0 ? '108%' : '-108%', scale: 0.9, opacity: 0 }),
   }
 
   return (
     <motion.div
       variants={item}
-      className="relative rounded-2xl overflow-hidden"
-      style={{ height: '152px' }}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
+      style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', height: 172 }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
     >
-      <div
-        ref={trackRef}
-        className="flex h-full"
-        style={{ width: `${all.length * 100}%` }}
-      >
-        {all.map((url, i) => (
-          <div
-            key={i}
-            className="h-full overflow-hidden cursor-pointer"
-            style={{ width: `${100 / all.length}%`, flexShrink: 0 }}
-            onClick={onOpen}
-          >
-            <img src={url} alt="" draggable={false} className="w-full h-full object-cover select-none" />
-          </div>
-        ))}
-      </div>
+      <AnimatePresence custom={dir} initial={false}>
+        <motion.div
+          key={current}
+          custom={dir}
+          variants={variants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ type: 'spring', stiffness: 300, damping: 34 }}
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragEnd={(_, info) => {
+            if (info.offset.x < -55) go(1)
+            else if (info.offset.x > 55) go(-1)
+          }}
+          style={{ position: 'absolute', inset: 0, cursor: 'grab', touchAction: 'pan-y' }}
+          whileTap={{ cursor: 'grabbing' }}
+        >
+          <img
+            src={images[current]} alt="" draggable={false}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', userSelect: 'none', pointerEvents: 'none' }}
+          />
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(to top, rgba(0,0,0,0.38) 0%, transparent 55%)',
+            pointerEvents: 'none',
+          }} />
+        </motion.div>
+      </AnimatePresence>
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
-
+      {/* Nav arrows */}
       {n > 1 && (
         <>
-          <button onClick={() => slide(-1)} aria-label="הקודם"
-            className="absolute top-1/2 right-2 -translate-y-1/2 w-7 h-7 rounded-full
-                       flex items-center justify-center text-zinc-700 text-lg leading-none
-                       shadow-md transition-all hover:scale-110 active:scale-90"
-            style={{ background: 'rgba(255,255,255,0.88)' }}>›</button>
-          <button onClick={() => slide(1)} aria-label="הבא"
-            className="absolute top-1/2 left-2 -translate-y-1/2 w-7 h-7 rounded-full
-                       flex items-center justify-center text-zinc-700 text-lg leading-none
-                       shadow-md transition-all hover:scale-110 active:scale-90"
-            style={{ background: 'rgba(255,255,255,0.88)' }}>‹</button>
+          <motion.button
+            onClick={() => go(-1)}
+            whileHover={{ scale: 1.12, x: -2 }} whileTap={{ scale: 0.86 }}
+            aria-label="הקודם"
+            style={{
+              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+              width: 32, height: 32, borderRadius: '50%', zIndex: 3, border: 'none', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.84)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth={2.5} strokeLinecap="round">
+              <path d="m9 18 6-6-6-6"/>
+            </svg>
+          </motion.button>
+          <motion.button
+            onClick={() => go(1)}
+            whileHover={{ scale: 1.12, x: 2 }} whileTap={{ scale: 0.86 }}
+            aria-label="הבא"
+            style={{
+              position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
+              width: 32, height: 32, borderRadius: '50%', zIndex: 3, border: 'none', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.84)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.18)',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth={2.5} strokeLinecap="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </motion.button>
         </>
       )}
 
-      {n > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+      {/* Top bar: expand button + counter */}
+      <div style={{ position: 'absolute', top: 8, left: 8, right: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 3 }}>
+        <motion.button
+          onClick={onOpen}
+          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.86 }}
+          aria-label="הגדל"
+          style={{
+            width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth={2.2}>
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+          </svg>
+        </motion.button>
+        {n > 1 && (
+          <span className="font-heebo" style={{
+            fontSize: 11, color: 'rgba(255,255,255,0.9)',
+            background: 'rgba(0,0,0,0.38)', backdropFilter: 'blur(4px)',
+            borderRadius: 10, padding: '2px 8px',
+          }}>
+            {current + 1}/{n}
+          </span>
+        )}
+      </div>
+
+      {/* Animated dots */}
+      {n > 1 && n <= 12 && (
+        <div style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 5, zIndex: 3 }}>
           {images.map((_, i) => (
             <motion.button
               key={i}
-              onClick={() => jumpTo(n + i, true)}
-              animate={{ width: i === dotIdx ? 16 : 6, background: i === dotIdx ? color : 'rgba(255,255,255,0.6)' }}
+              onClick={() => { setDir(i > current ? 1 : -1); setCurrent(i) }}
+              animate={{ width: i === current ? 20 : 6, background: i === current ? '#ffffff' : 'rgba(255,255,255,0.42)' }}
               transition={{ duration: 0.2 }}
-              className="rounded-full" style={{ height: 6 }}
+              style={{ height: 6, borderRadius: 3, border: 'none', padding: 0, cursor: 'pointer', display: 'block' }}
               aria-label={`תמונה ${i + 1}`}
             />
           ))}
         </div>
       )}
-
-      <div className="absolute top-2 flex items-center justify-between inset-x-2 pointer-events-none">
-        <button onClick={onOpen} aria-label="הגדל"
-          className="w-6 h-6 rounded-full flex items-center justify-center shadow pointer-events-auto transition-all hover:scale-110"
-          style={{ background: 'rgba(255,255,255,0.76)' }}>
-          <svg width="10" height="10" fill="none" stroke="#444" strokeWidth={2} viewBox="0 0 24 24">
-            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-          </svg>
-        </button>
-        {n > 1 && (
-          <span className="font-heebo text-[10px] text-white/85 bg-black/35 rounded-full px-2 py-0.5">
-            {dotIdx + 1}/{n}
-          </span>
-        )}
-      </div>
     </motion.div>
   )
 }
@@ -366,6 +394,7 @@ export default function StudioPanel({ studio, onClose }) {
     return () => window.removeEventListener('keydown', fn)
   }, [onClose, lightboxOpen])
 
+  const ctaEmoji       = { 'גבות': '✨', 'לק': '💅', 'מספרה': '✂️', 'קוסמטיקה': '💄' }[studio.type] || '📅'
   const hasAge         = studio.owner_age != null && studio.owner_age !== ''
   const hasYears       = studio.years_experience != null && studio.years_experience !== ''
   const hasSpecialty   = Boolean(studio.specialty?.trim())
@@ -566,7 +595,7 @@ export default function StudioPanel({ studio, onClose }) {
               style={{ background: color, boxShadow: `0 4px 16px ${color}55` }}
               whileHover={{ scale: 1.02, boxShadow: `0 6px 22px ${color}66` }}
               whileTap={{ scale: 0.97 }}>
-              לקביעת תור
+              {ctaEmoji} לקביעת תור
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
                 <polyline points="15 3 21 3 21 9"/>
