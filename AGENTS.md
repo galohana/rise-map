@@ -40,12 +40,19 @@ cp .env.example .env.local
 
 ## Deploy
 
+הכלל: `~/.claude/CLAUDE.md`, "Deploy — עצירה מוחלטת". deploy רק אחרי מילת-deploy מפורשת מגל. הסעיף
+הזה מתאר איך הריפו עולה, כדי שסיכון-הדיפלוי ישופט נכון.
+
+**push ל-main עלול לעלות לפרודקשן: התייחס אליו כ-deploy.** ב-GitHub יש Production deployments של
+vercel[bot] על push (האחרון 2026-06-09, נבדק 2026-09-28). לא נבדק אם החיבור ל-git עדיין פעיל, ולכן
+ההנחה הבטוחה היא שכן. עד 2026-09-28 עמד כאן רק `vercel --prod`.
+
 ```bash
 # Build לפני deploy
 npm run build
 
-# Deploy production — רק אחרי אישור גל
-vercel --prod
+# push = deploy, או vercel --prod -- שניהם רק אחרי מילת-deploy מפורשת מגל
+git push origin main
 ```
 
 ---
@@ -56,8 +63,8 @@ vercel --prod
 - ENV variables — שמות, ערכים, הוספה/מחיקה
 - החלפת ספרייה ראשית (React, Next.js, Supabase, Leaflet)
 - שינוי ארכיטקטורה בסיסית (routing, API structure, auth flow)
-- Push ישיר ל-main/master ללא build נקי
-- `vercel --prod` — תמיד לפני מתין לאישור מגל
+- Push ל-main/master — **התייחס אליו כ-deploy** (ראה Deploy למעלה). רק אחרי build נקי **וגם** מילת-deploy מפורשת מגל.
+- `vercel --prod` — רק אחרי מילת-deploy מפורשת מגל
 
 ---
 
