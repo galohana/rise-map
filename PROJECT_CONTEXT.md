@@ -24,7 +24,7 @@ hub מרכזי לגילוי רשת RISE — כל אתר לקוח מקושר חז
 
 | שכבה | טכנולוגיה |
 |------|-----------|
-| Framework | Next.js 16.2.7 (App Router) |
+| Framework | Next.js 16.4.2 (App Router) |
 | UI | React 19 |
 | Styling | Tailwind CSS 4 |
 | Animation | Framer Motion 12 |
